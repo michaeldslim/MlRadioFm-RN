@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Increased bottom padding for podcast controls
   },
   stationItem: {
-    backgroundColor: 'rgba(242, 242, 247, 0.5)',
+    backgroundColor: 'rgba(205, 220, 196, 0.5)',
     borderRadius: 12,
     marginBottom: 8,
     overflow: 'hidden',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stationName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
     color: '#1C1C1E',
     marginBottom: 4,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stationTypeText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '500',
     color: '#8E8E93',
     marginLeft: 6,
@@ -229,13 +229,13 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(142, 142, 147, 0.2)',
   },
   episodeNumber: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#FF9500',
     marginBottom: 2,
   },
   episodeTitle: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#8E8E93',
     marginBottom: 8,
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   timeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '500',
     color: '#8E8E93',
   },
