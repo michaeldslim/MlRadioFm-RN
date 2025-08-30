@@ -7,12 +7,13 @@ export class RadioPlayerService {
   private static instance: RadioPlayerService;
   private sound: Audio.Sound | null = null;
   private listeners: ((state: IPlayerState) => void)[] = [];
+  private isChangingStation: boolean = false;
   private playerState: IPlayerState = {
     isPlaying: false,
     isLoading: false,
     currentStation: null,
     currentEpisode: null,
-    volume: 0.6,
+    volume: 0.5,
     currentTime: 0,
     duration: 0,
     progress: 0,
@@ -59,15 +60,27 @@ export class RadioPlayerService {
   }
 
   async playStation(station: IRadioStation): Promise<void> {
-    this.updateState({
-      isLoading: true,
-      errorMessage: null,
-      isPlaying: false,
-    });
+    // Prevent concurrent station changes
+    if (this.isChangingStation) {
+      console.log('Station change already in progress, ignoring request');
+      return;
+    }
 
-    await this.stop();
+    this.isChangingStation = true;
 
     try {
+      // Immediately update state to prevent multiple concurrent calls
+      this.updateState({
+        isLoading: true,
+        errorMessage: null,
+        isPlaying: false,
+      });
+
+      // Ensure complete cleanup of previous audio before starting new one
+      await this.stop();
+      
+      // Add a small delay to ensure audio system is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
       let streamURL: string;
 
       if (station.type === RadioStationType.KOREAN) {
@@ -106,6 +119,8 @@ export class RadioPlayerService {
         isLoading: false,
         isPlaying: false,
       });
+    } finally {
+      this.isChangingStation = false;
     }
   }
 
@@ -330,9 +345,16 @@ export class RadioPlayerService {
     
     if (this.sound) {
       try {
+        // First stop the audio if it's playing
+        const status = await this.sound.getStatusAsync();
+        if (status.isLoaded && status.isPlaying) {
+          await this.sound.stopAsync();
+        }
+        
+        // Then unload the audio completely
         await this.sound.unloadAsync();
       } catch (error) {
-        // Stop error
+        console.warn('Error during audio cleanup:', error);
       }
       this.sound = null;
     }

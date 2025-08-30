@@ -47,10 +47,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
       <View style={styles.controlsContainer}>
         {/* Play/Pause Button */}
         <TouchableOpacity
-          style={[
-            styles.playButton,
-            !currentStation && styles.playButtonDisabled,
-          ]}
+          style={styles.playButton}
           onPress={onPlayPause}
           disabled={!currentStation}
         >
@@ -60,7 +57,10 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
                 ? ['#007AFF', '#AF52DE']
                 : ['#8E8E93', '#8E8E93']
             }
-            style={styles.playButtonGradient}
+            style={[
+              styles.playButtonGradient,
+              !currentStation && styles.playButtonDisabled,
+            ]}
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
@@ -72,14 +72,14 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
 
         {/* Stop Button */}
         <TouchableOpacity
-          style={[
-            styles.stopButton,
-            !currentStation && styles.stopButtonDisabled,
-          ]}
+          style={styles.stopButton}
           onPress={onStop}
           disabled={!currentStation}
         >
-          <View style={styles.stopButtonBackground}>
+          <View style={[
+            styles.stopButtonBackground,
+            !currentStation && styles.stopButtonDisabled,
+          ]}>
             <Ionicons name="stop" size={16} color="white" />
           </View>
         </TouchableOpacity>
