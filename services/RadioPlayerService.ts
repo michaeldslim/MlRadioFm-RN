@@ -146,6 +146,11 @@ export class RadioPlayerService {
       return await api.getYTNStreamURL();
     } else if (station.url.startsWith('arirang://')) {
       return await api.getArirangRadioStreamURL();
+    } else if (station.url.startsWith('tbn://')) {
+      return await api.getTBNRadioStreamURL();
+    } else if (station.url.startsWith('cbs://')) {
+      const channel = station.url.replace('cbs://', '');
+      return await api.getCBSStreamURL(channel);
     } else {
       throw new Error(RadioError.INVALID_URL);
     }

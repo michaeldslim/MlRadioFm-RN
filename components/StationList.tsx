@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 import { IRadioStation, IPlayerState, RadioStationType } from '../types';
 import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
