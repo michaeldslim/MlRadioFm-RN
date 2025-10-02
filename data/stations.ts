@@ -75,24 +75,6 @@ export const radioStations: IRadioStation[] = [
     type: RadioStationType.KOREAN,
   },
   {
-    id: 'tbn-radio',
-    name: 'TBN 교통방송',
-    url: 'tbn://main',
-    type: RadioStationType.KOREAN,
-  },
-  {
-    id: 'cbs-standard',
-    name: 'CBS 표준FM',
-    url: 'cbs://standard',
-    type: RadioStationType.KOREAN,
-  },
-  {
-    id: 'cbs-fm',
-    name: 'CBS 음악FM',
-    url: 'cbs://music',
-    type: RadioStationType.KOREAN,
-  },
-  {
     id: 'arirang-radio',
     name: 'Arirang Radio',
     url: 'arirang://main',

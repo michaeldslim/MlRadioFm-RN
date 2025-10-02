@@ -196,7 +196,7 @@ export class KoreanRadioAPI {
       for (const streamUrl of streamUrls) {
         try {
           const response = await fetch(streamUrl, {
-            method: 'HEAD',
+            method: 'GET',
             headers: {
               'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36'
             }
@@ -261,93 +261,4 @@ export class KoreanRadioAPI {
     }
   }
 
-  // CBS 라디오 API
-  async getCBSStreamURL(channel: string): Promise<string> {
-    try {
-      // Try multiple possible CBS stream URLs for each channel
-      let streamUrls: string[] = [];
-      
-      if (channel === 'standard') {
-        // CBS 표준FM 98.1
-        streamUrls = [
-          'https://aac.cbs.co.kr/cbs981/_definst_/cbs981.stream/playlist.m3u8',
-          'https://stream.cbs.co.kr/cbs981/_definst_/cbs981.stream/playlist.m3u8',
-          'https://live.cbs.co.kr/cbs981/playlist.m3u8',
-          'https://radio.cbs.co.kr/cbs981/playlist.m3u8'
-        ];
-      } else if (channel === 'music') {
-        // CBS 음악FM 93.9
-        streamUrls = [
-          'https://aac.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8',
-          'https://stream.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8',
-          'https://live.cbs.co.kr/cbs939/playlist.m3u8',
-          'https://radio.cbs.co.kr/cbs939/playlist.m3u8'
-        ];
-      } else {
-        throw new Error(`Unknown CBS channel: ${channel}`);
-      }
-      
-      for (const streamUrl of streamUrls) {
-        try {
-          const response = await fetch(streamUrl, {
-            method: 'HEAD',
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-              'Accept': '*/*',
-              'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
-              'Referer': 'https://www.cbs.co.kr/',
-              'Origin': 'https://www.cbs.co.kr'
-            }
-          });
-          
-          if (response.ok) {
-            return streamUrl;
-          }
-        } catch (urlError) {
-          continue;
-        }
-      }
-      
-      throw new Error(`All CBS ${channel} stream URLs are inaccessible`);
-      
-    } catch (error) {
-      throw new Error(`CBS ${channel} stream failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  // TBN 교통방송 API
-  async getTBNRadioStreamURL(): Promise<string> {
-    try {
-      // TBN has multiple regional stations, using the main Seoul station
-      const streamUrls = [
-        'http://radio2.tbn.or.kr:1935/gyeongin/myStream/playlist.m3u8',
-        'https://cdnlive.tbn.co.kr/tbn/tbn.stream/playlist.m3u8',
-        'https://live.tbn.co.kr/tbn/tbn.stream/playlist.m3u8',
-        'https://stream.tbn.co.kr/tbn_seoul/playlist.m3u8',
-        'https://cdnlive.tbn.co.kr/tbn_seoul/playlist.m3u8'
-      ];
-      
-      for (const streamUrl of streamUrls) {
-        try {
-          const response = await fetch(streamUrl, {
-            method: 'HEAD',
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36'
-            }
-          });
-          
-          if (response.ok) {
-            return streamUrl;
-          }
-        } catch (urlError) {
-          continue;
-        }
-      }
-      
-      throw new Error('All TBN stream URLs are inaccessible');
-      
-    } catch (error) {
-      throw new Error(`TBN stream failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
 }

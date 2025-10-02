@@ -51,14 +51,24 @@ export const filterStationsByCategory = (
       return stations.filter(station => station.name.startsWith('MBC'));
     case StationCategory.SBS:
       return stations.filter(station => station.name.startsWith('SBS'));
-    case StationCategory.OTHER:
-      return stations.filter(
+    case StationCategory.OTHER: {
+      const filtered = stations.filter(
         station =>
-          !station.name.startsWith('KBS') &&
-          !station.name.startsWith('MBC') &&
-          !station.name.startsWith('SBS') &&
+          (
+            (
+              !station.name.startsWith('KBS') &&
+              !station.name.startsWith('MBC') &&
+              !station.name.startsWith('SBS')
+            ) ||
+            station.name.startsWith('BBS') ||
+            station.name.startsWith('YTN') ||
+            station.url.startsWith('bbs://') ||
+            station.url.startsWith('ytn://')
+          ) &&
           station.type === RadioStationType.KOREAN
       );
+      return filtered;
+    }
     case StationCategory.INTERNATIONAL:
       return stations.filter(station => station.type === RadioStationType.INTERNATIONAL);
     case StationCategory.PODCAST:

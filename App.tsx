@@ -99,6 +99,7 @@ export default function App() {
             playerState={playerState}
             onStationSelect={handleStationSelect}
             onSeek={handleSeek}
+            selectedCategory={selectedCategory}
           />
         </View>
       </View>

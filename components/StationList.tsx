@@ -12,11 +12,14 @@ import Slider from '@react-native-community/slider';
 import { IRadioStation, IPlayerState, RadioStationType } from '../types';
 import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
 
+import { StationCategory } from '../types';
+
 interface IStationListProps {
   stations: IRadioStation[];
   playerState: IPlayerState;
   onStationSelect: (station: IRadioStation) => void;
   onSeek?: (progress: number) => void;
+  selectedCategory?: StationCategory;
 }
 
 export const StationList: React.FC<IStationListProps> = ({
@@ -24,6 +27,7 @@ export const StationList: React.FC<IStationListProps> = ({
   playerState,
   onStationSelect,
   onSeek,
+  selectedCategory,
 }) => {
   const formatTime = (seconds: number): string => {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
@@ -35,10 +39,24 @@ export const StationList: React.FC<IStationListProps> = ({
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const getKoreanPrefix = (station: IRadioStation) => {
+    if (station.type !== RadioStationType.KOREAN) return '';
+    if (station.url.startsWith('kbs://')) return 'KBS ';
+    if (station.url.startsWith('mbc://')) return 'MBC ';
+    if (station.url.startsWith('sbs://')) return 'SBS ';
+    if (station.url.startsWith('ytn://')) return 'YTN ';
+    if (station.url.startsWith('bbs://')) return 'BBS ';
+    return '';
+  };
+
   const renderStationItem = ({ item: station }: { item: IRadioStation }) => {
     const isCurrentStation = playerState.currentStation?.id === station.id;
     const isPlaying = isCurrentStation && playerState.isPlaying;
     const isLoading = isCurrentStation && playerState.isLoading;
+
+    // Assume selectedCategory is available via prop or context
+    const showPrefix = typeof selectedCategory !== 'undefined' && (selectedCategory === StationCategory.ALL || (selectedCategory === StationCategory.OTHER && (station.url.startsWith('bbs://') || station.url.startsWith('ytn://'))));
+    const prefix = showPrefix ? getKoreanPrefix(station) : '';
 
     return (
       <TouchableOpacity
@@ -66,7 +84,7 @@ export const StationList: React.FC<IStationListProps> = ({
           {/* Station Info */}
           <View style={styles.stationInfo}>
             <Text style={styles.stationName} numberOfLines={2}>
-              {station.name.replace(/^(KBS|MBC|SBS)\s+/, '')}
+              {prefix}{station.name.replace(/^(KBS|MBC|SBS|YTN|BBS)\s+/, '')}
             </Text>
             
             <View style={styles.stationMeta}>
