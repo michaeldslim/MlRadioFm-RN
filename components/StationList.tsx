@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { IRadioStation, IPlayerState, RadioStationType } from '../types';
 import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
-
+import { useLanguage } from '../contexts/LanguageContext';
 import { StationCategory } from '../types';
 
 interface IStationListProps {
@@ -29,6 +29,7 @@ export const StationList: React.FC<IStationListProps> = ({
   onSeek,
   selectedCategory,
 }) => {
+  const { t, language } = useLanguage();
   const formatTime = (seconds: number): string => {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
     
@@ -87,6 +88,13 @@ export const StationList: React.FC<IStationListProps> = ({
               {prefix}{station.name.replace(/^(KBS|MBC|SBS|YTN|BBS)\s+/, '')}
             </Text>
             
+            {/* English subtitle for Korean stations when English is active */}
+            {language === 'en' && station.nameEn && station.type === RadioStationType.KOREAN && (
+              <Text style={styles.stationNameEn} numberOfLines={1}>
+                {station.nameEn}
+              </Text>
+            )}
+            
             <View style={styles.stationMeta}>
               <Ionicons
                 name={getStationTypeIcon(station.type) as any}
@@ -94,7 +102,7 @@ export const StationList: React.FC<IStationListProps> = ({
                 color="#8E8E93"
               />
               <Text style={styles.stationTypeText}>
-                {getStationTypeText(station.type)}
+                {getStationTypeText(station.type, language)}
               </Text>
             </View>
 
@@ -105,7 +113,7 @@ export const StationList: React.FC<IStationListProps> = ({
               <View style={styles.episodeInfo}>
                 {playerState.currentEpisode.number && (
                   <Text style={styles.episodeNumber}>
-                    Episode #{playerState.currentEpisode.number}
+                    {t.episodePrefix}{playerState.currentEpisode.number}
                   </Text>
                 )}
                 <Text style={styles.episodeTitle} numberOfLines={2}>
@@ -161,8 +169,8 @@ export const StationList: React.FC<IStationListProps> = ({
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="radio" size={48} color="#8E8E93" />
-      <Text style={styles.emptyStateTitle}>검색 결과가 없습니다</Text>
-      <Text style={styles.emptyStateSubtitle}>다른 키워드로 검색해보세요</Text>
+      <Text style={styles.emptyStateTitle}>{t.emptyStateTitle}</Text>
+      <Text style={styles.emptyStateSubtitle}>{t.emptyStateSubtitle}</Text>
     </View>
   );
 
@@ -227,6 +235,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1C1C1E',
     marginBottom: 4,
+  },
+  stationNameEn: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#007AFF',
+    marginBottom: 6,
+    fontStyle: 'italic',
   },
   stationMeta: {
     flexDirection: 'row',
