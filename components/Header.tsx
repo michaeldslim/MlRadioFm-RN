@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IPlayerState } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface IHeaderProps {
   playerState: IPlayerState;
@@ -26,6 +27,12 @@ export const Header: React.FC<IHeaderProps> = ({
   onSearchToggle,
   onSearchTextChange,
 }) => {
+  const { language, setLanguage, t } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ko' : 'en');
+  };
+
   return (
     <LinearGradient
       colors={['#f8f9fa', '#e9ecef']}
@@ -40,7 +47,7 @@ export const Header: React.FC<IHeaderProps> = ({
             >
               <Ionicons name="radio" size={24} color="white" />
             </LinearGradient>
-            <Text style={styles.title}>ML Radio FM</Text>
+            <Text style={styles.title}>{t.appTitle}</Text>
           </View>
           
           {playerState.currentStation ? (
@@ -48,20 +55,31 @@ export const Header: React.FC<IHeaderProps> = ({
               {playerState.currentStation.name}
             </Text>
           ) : (
-            <Text style={styles.subtitle}>스테이션을 선택하세요</Text>
+            <Text style={styles.subtitle}>{t.selectStation}</Text>
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={onSearchToggle}
-        >
-          <Ionicons
-            name={showingSearch ? 'close-circle' : 'search'}
-            size={24}
-            color="#007AFF"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.languageButton}
+            onPress={toggleLanguage}
+          >
+            <Text style={styles.languageText}>
+              {language === 'en' ? 'KO' : 'EN'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={onSearchToggle}
+          >
+            <Ionicons
+              name={showingSearch ? 'close-circle' : 'search'}
+              size={24}
+              color="#007AFF"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showingSearch && (
@@ -69,7 +87,7 @@ export const Header: React.FC<IHeaderProps> = ({
           <Ionicons name="search" size={16} color="#8E8E93" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="스테이션 검색..."
+            placeholder={t.searchPlaceholder}
             value={searchText}
             onChangeText={onSearchTextChange}
             placeholderTextColor="#8E8E93"
@@ -116,6 +134,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
     marginTop: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.3)',
+  },
+  languageText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#007AFF',
   },
   searchButton: {
     padding: 8,

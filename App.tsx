@@ -8,6 +8,7 @@ import { useRadioPlayer } from './hooks/useRadioPlayer';
 import { radioStations } from './data/stations';
 import { StationCategory } from './types';
 import { filterStationsByCategory } from './utils/categoryUtils';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 export default function App() {
   const [searchText, setSearchText] = useState('');
@@ -61,49 +62,51 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      
-      <View style={styles.content}>
-        {/* Header */}
-        <Header
-          playerState={playerState}
-          searchText={searchText}
-          showingSearch={showingSearch}
-          onSearchToggle={handleSearchToggle}
-          onSearchTextChange={setSearchText}
-        />
-
-        {/* Control Panel */}
-        <ControlPanel
-          playerState={playerState}
-          onPlayPause={togglePlayPause}
-          onStop={stop}
-          onVolumeChange={handleVolumeChange}
-        />
-
-        {/* Category Tabs */}
-        <CategoryTabs
-          selectedCategory={selectedCategory}
-          stations={radioStations}
-          onCategorySelect={setSelectedCategory}
-        />
-
-        {/* Station List */}
-        <View style={[
-          styles.stationListContainer,
-          playerState.currentStation?.type === 'podcast' && playerState.isPlaying && styles.stationListWithPodcast
-        ]}>
-          <StationList
-            stations={filteredStations}
+    <LanguageProvider>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
+        
+        <View style={styles.content}>
+          {/* Header */}
+          <Header
             playerState={playerState}
-            onStationSelect={handleStationSelect}
-            onSeek={handleSeek}
-            selectedCategory={selectedCategory}
+            searchText={searchText}
+            showingSearch={showingSearch}
+            onSearchToggle={handleSearchToggle}
+            onSearchTextChange={setSearchText}
           />
+
+          {/* Control Panel */}
+          <ControlPanel
+            playerState={playerState}
+            onPlayPause={togglePlayPause}
+            onStop={stop}
+            onVolumeChange={handleVolumeChange}
+          />
+
+          {/* Category Tabs */}
+          <CategoryTabs
+            selectedCategory={selectedCategory}
+            stations={radioStations}
+            onCategorySelect={setSelectedCategory}
+          />
+
+          {/* Station List */}
+          <View style={[
+            styles.stationListContainer,
+            playerState.currentStation?.type === 'podcast' && playerState.isPlaying && styles.stationListWithPodcast
+          ]}>
+            <StationList
+              stations={filteredStations}
+              playerState={playerState}
+              onStationSelect={handleStationSelect}
+              onSeek={handleSeek}
+              selectedCategory={selectedCategory}
+            />
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LanguageProvider>
   );
 }
 

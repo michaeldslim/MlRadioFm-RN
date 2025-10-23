@@ -1,4 +1,5 @@
 import { StationCategory, IStationCategoryInfo, IRadioStation, RadioStationType } from '../types';
+import { Language } from '../locales';
 
 export const categoryInfo: Record<StationCategory, IStationCategoryInfo> = {
   [StationCategory.ALL]: {
@@ -78,16 +79,29 @@ export const filterStationsByCategory = (
   }
 };
 
-export const getStationTypeText = (type: RadioStationType): string => {
-  switch (type) {
-    case RadioStationType.KOREAN:
-      return '한국 방송';
-    case RadioStationType.INTERNATIONAL:
-      return '해외 방송';
-    case RadioStationType.PODCAST:
-      return '팟캐스트';
-    default:
-      return '';
+export const getStationTypeText = (type: RadioStationType, language: Language = 'en'): string => {
+  if (language === 'ko') {
+    switch (type) {
+      case RadioStationType.KOREAN:
+        return '한국 라디오';
+      case RadioStationType.INTERNATIONAL:
+        return '해외 라디오';
+      case RadioStationType.PODCAST:
+        return '팟캐스트';
+      default:
+        return '';
+    }
+  } else {
+    switch (type) {
+      case RadioStationType.KOREAN:
+        return 'Korean Radio';
+      case RadioStationType.INTERNATIONAL:
+        return 'International';
+      case RadioStationType.PODCAST:
+        return 'Podcast';
+      default:
+        return '';
+    }
   }
 };
 
@@ -101,5 +115,47 @@ export const getStationTypeIcon = (type: RadioStationType): string => {
       return 'mic';
     default:
       return 'radio';
+  }
+};
+
+export const getCategoryDisplayName = (category: StationCategory, language: Language = 'en'): string => {
+  if (language === 'ko') {
+    switch (category) {
+      case StationCategory.ALL:
+        return '전체';
+      case StationCategory.KBS:
+        return 'KBS';
+      case StationCategory.MBC:
+        return 'MBC';
+      case StationCategory.SBS:
+        return 'SBS';
+      case StationCategory.OTHER:
+        return '기타';
+      case StationCategory.INTERNATIONAL:
+        return '해외';
+      case StationCategory.PODCAST:
+        return '팟캐스트';
+      default:
+        return category;
+    }
+  } else {
+    switch (category) {
+      case StationCategory.ALL:
+        return 'All';
+      case StationCategory.KBS:
+        return 'KBS';
+      case StationCategory.MBC:
+        return 'MBC';
+      case StationCategory.SBS:
+        return 'SBS';
+      case StationCategory.OTHER:
+        return 'Other';
+      case StationCategory.INTERNATIONAL:
+        return 'International';
+      case StationCategory.PODCAST:
+        return 'Podcast';
+      default:
+        return category;
+    }
   }
 };

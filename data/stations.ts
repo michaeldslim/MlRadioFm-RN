@@ -5,24 +5,28 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'kbs-1radio',
     name: 'KBS 1라디오',
+    nameEn: 'KBS 1 Radio',
     url: 'kbs://21',
     type: RadioStationType.KOREAN,
   },
   {
     id: 'kbs-2radio',
     name: 'KBS 2라디오 해피FM',
+    nameEn: 'KBS 2 Radio Happy FM',
     url: 'kbs://22',
     type: RadioStationType.KOREAN,
   },
   {
     id: 'kbs-3radio',
     name: 'KBS 3라디오 쿨FM',
+    nameEn: 'KBS 3 Radio Cool FM',
     url: 'kbs://23',
     type: RadioStationType.KOREAN,
   },
   {
     id: 'kbs-classic',
     name: 'KBS 클래식FM',
+    nameEn: 'KBS Classic FM',
     url: 'kbs://24',
     type: RadioStationType.KOREAN,
   },
@@ -31,6 +35,7 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'mbc-standard',
     name: 'MBC 표준FM',
+    nameEn: 'MBC Standard FM',
     url: 'mbc://sfm',
     type: RadioStationType.KOREAN,
   },
@@ -43,6 +48,7 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'mbc-allthatmusic',
     name: 'MBC 올댓뮤직',
+    nameEn: 'MBC All That Music',
     url: 'mbc://chm',
     type: RadioStationType.KOREAN,
   },
@@ -51,12 +57,14 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'sbs-love',
     name: 'SBS 러브FM',
+    nameEn: 'SBS Love FM',
     url: 'sbs://love',
     type: RadioStationType.KOREAN,
   },
   {
     id: 'sbs-power',
     name: 'SBS 파워FM',
+    nameEn: 'SBS Power FM',
     url: 'sbs://power',
     type: RadioStationType.KOREAN,
   },
@@ -65,12 +73,14 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'bbs-main',
     name: 'BBS 불교방송',
+    nameEn: 'BBS Buddhist Broadcasting',
     url: 'bbs://main',
     type: RadioStationType.KOREAN,
   },
   {
     id: 'ytn-radio',
     name: 'YTN 라디오',
+    nameEn: 'YTN Radio',
     url: 'ytn://main',
     type: RadioStationType.KOREAN,
   },

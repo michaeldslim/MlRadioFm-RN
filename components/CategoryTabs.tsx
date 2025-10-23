@@ -9,7 +9,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StationCategory, IRadioStation } from '../types';
-import { categoryInfo, filterStationsByCategory } from '../utils/categoryUtils';
+import { categoryInfo, filterStationsByCategory, getCategoryDisplayName } from '../utils/categoryUtils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ICategoryTabsProps {
   selectedCategory: StationCategory;
@@ -22,6 +23,7 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
   stations,
   onCategorySelect,
 }) => {
+  const { language } = useLanguage();
   const categories = Object.values(StationCategory);
 
   const renderTabButton = (category: StationCategory) => {
@@ -43,7 +45,7 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
             <View style={styles.tabContent}>
               <Ionicons name="radio" size={11} color="white" />
               <Text style={[styles.tabText, styles.selectedTabText]}>
-                {category}
+                {getCategoryDisplayName(category, language)}
               </Text>
               {stationCount > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: 'white' }]}>
@@ -59,7 +61,7 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
             <View style={styles.tabContent}>
               <Ionicons name="radio" size={11} color={categoryData.color} />
               <Text style={[styles.tabText, { color: '#1C1C1E' }]}>
-                {category}
+                {getCategoryDisplayName(category, language)}
               </Text>
               {stationCount > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: categoryData.color }]}>

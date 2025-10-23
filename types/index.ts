@@ -17,6 +17,7 @@ export enum StationCategory {
 export interface IRadioStation {
   id: string;
   name: string;
+  nameEn?: string;
   url: string;
   type: RadioStationType;
 }
