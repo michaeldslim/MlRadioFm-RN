@@ -328,6 +328,8 @@ export class RadioPlayerService {
     try {
       if (this.playerState.isPlaying) {
         await this.sound.pauseAsync();
+        // Explicitly set loading to false when pausing
+        this.updateState({ isLoading: false });
       } else {
         await this.sound.playAsync();
       }
