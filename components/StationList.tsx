@@ -13,6 +13,7 @@ import { IRadioStation, IPlayerState, RadioStationType } from '../types';
 import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { StationCategory } from '../types';
+import { Copyright } from './Copyright';
 
 interface IStationListProps {
   stations: IRadioStation[];
@@ -174,6 +175,8 @@ export const StationList: React.FC<IStationListProps> = ({
     </View>
   );
 
+  const renderFooter = () => <Copyright />;
+
   return (
     <FlatList
       data={stations}
@@ -181,6 +184,7 @@ export const StationList: React.FC<IStationListProps> = ({
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.listContainer}
       ListEmptyComponent={renderEmptyState}
+      ListFooterComponent={renderFooter}
       showsVerticalScrollIndicator={false}
     />
   );
