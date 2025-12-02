@@ -186,11 +186,8 @@ export class KoreanRadioAPI {
     try {
       // Try multiple possible BBS stream URLs
       const streamUrls = [
-        'https://bbslive.clouducs.com/bbsradio-live/livestream/playlist.m3u8',
-        'https://bbslive.clouducs.com/bbsradio-live/livestream.m3u8',
-        'https://live.bbs.co.kr/radio/bbs.m3u8',
-        'https://stream.bbs.co.kr/radio/live.m3u8',
-        'https://bbslive.clouducs.com/bbsradio/livestream/playlist.m3u8'
+        'https://bbslive.clouducs.com/bbsradio-mlive/radio.stream/chunklist_w1242564288.m3u8',
+        'https://bbslive.clouducs.com/bbsradio-mlive/radio.stream/chunklist_w849550616.m3u8',
       ];
       
       for (const streamUrl of streamUrls) {
