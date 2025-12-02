@@ -111,6 +111,13 @@ export const radioStations: IRadioStation[] = [
     type: RadioStationType.INTERNATIONAL,
   },
 
+  {
+    id: 'wayfm-897',
+    name: 'Way-FM 89.7',
+    url: 'https://ais-sa8.cdnstream1.com/3144_64.aac',
+    type: RadioStationType.INTERNATIONAL,
+  },
+
   // Podcasts
   {
     id: 'syntax-fm',
