@@ -1,4 +1,5 @@
 import { IRadioStation, RadioStationType } from '../types';
+import { makeIHeartUrl, WAYFM_897_STREAM_URL, PODCAST_FEEDS } from '../services/StreamConfig';
 
 export const radioStations: IRadioStation[] = [
   // KBS 라디오
@@ -95,26 +96,26 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'kiss-fm',
     name: 'KISS FM 106.1',
-    url: 'https://stream.revma.ihrhls.com/zc181/hls.m3u8',
+    url: makeIHeartUrl(181),
     type: RadioStationType.INTERNATIONAL,
   },
   {
     id: 'star-1021',
     name: 'STAR 102.1',
-    url: 'https://stream.revma.ihrhls.com/zc2815/hls.m3u8',
+    url: makeIHeartUrl(2815),
     type: RadioStationType.INTERNATIONAL,
   },
   {
     id: 'new-mix',
     name: 'The New MiX 102.9',
-    url: 'https://stream.revma.ihrhls.com/zc2237/hls.m3u8',
+    url: makeIHeartUrl(2237),
     type: RadioStationType.INTERNATIONAL,
   },
 
   {
     id: 'wayfm-897',
     name: 'Way-FM 89.7',
-    url: 'https://ais-sa8.cdnstream1.com/3144_64.aac',
+    url: WAYFM_897_STREAM_URL,
     type: RadioStationType.INTERNATIONAL,
   },
 
@@ -122,7 +123,7 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'syntax-fm',
     name: 'Syntax.fm',
-    url: 'https://feed.syntax.fm/rss',
+    url: PODCAST_FEEDS['syntax-fm'],
     type: RadioStationType.PODCAST,
   },
 ];
