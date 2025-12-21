@@ -1,4 +1,12 @@
 import { RadioError } from '../types';
+import {
+  ARIRANG_STREAM_URL,
+  BBS_STREAM_CANDIDATES,
+  KBS_API_BASE,
+  MBC_API_URL,
+  SBS_API_BASE,
+  YTN_STREAM_URL,
+} from './StreamConfig';
 
 export class KoreanRadioAPI {
   private static instance: KoreanRadioAPI;
@@ -13,7 +21,7 @@ export class KoreanRadioAPI {
   // KBS API - 채널 코드: 21(1라디오), 22(2라디오), 23(3라디오), 24(클래식FM)
   async getKBSStreamURL(channelCode: string): Promise<string> {
     try {
-      const response = await fetch(`https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/${channelCode}`, {
+      const response = await fetch(`${KBS_API_BASE}/${channelCode}`, {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
@@ -62,7 +70,7 @@ export class KoreanRadioAPI {
   // MBC API - 채널: sfm(표준FM), mfm(FM4U)
   async getMBCStreamURL(channel: string): Promise<string> {
     try {
-      const response = await fetch(`https://sminiplay.imbc.com/aacplay.ashx?agent=webapp&channel=${channel}`, {
+      const response = await fetch(`${MBC_API_URL}${channel}`, {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
@@ -79,7 +87,7 @@ export class KoreanRadioAPI {
       }
       
       // Check if we got redirected to an actual stream URL
-      const originalUrl = `https://sminiplay.imbc.com/aacplay.ashx?agent=webapp&channel=${channel}`;
+      const originalUrl = `${MBC_API_URL}${channel}`;
       if (response.url === originalUrl) {
         const responseText = await response.text();
         
@@ -104,7 +112,7 @@ export class KoreanRadioAPI {
   // SBS API - 채널: lovefm, powerfm
   async getSBSStreamURL(channel: string): Promise<string> {
     try {
-      const response = await fetch(`https://apis.sbs.co.kr/play-api/1.0/livestream/${channel}pc/${channel}fm?protocol=hls&ssl=Y`, {
+      const response = await fetch(`${SBS_API_BASE}/${channel}pc/${channel}fm?protocol=hls&ssl=Y`, {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
@@ -151,7 +159,7 @@ export class KoreanRadioAPI {
   // MBC 올댓뮤직 API
   async getMBCAllThatMusicURL(): Promise<string> {
     try {
-      const response = await fetch('https://sminiplay.imbc.com/aacplay.ashx?agent=webapp&channel=chm', {
+      const response = await fetch(`${MBC_API_URL}chm`, {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
@@ -185,10 +193,7 @@ export class KoreanRadioAPI {
   async getBBSStreamURL(): Promise<string> {
     try {
       // Try multiple possible BBS stream URLs
-      const streamUrls = [
-        'https://bbslive.clouducs.com/bbsradio-mlive/radio.stream/chunklist_w1242564288.m3u8',
-        'https://bbslive.clouducs.com/bbsradio-mlive/radio.stream/chunklist_w849550616.m3u8',
-      ];
+      const streamUrls = BBS_STREAM_CANDIDATES;
       
       for (const streamUrl of streamUrls) {
         try {
@@ -217,7 +222,7 @@ export class KoreanRadioAPI {
   // YTN 라디오 API
   async getYTNStreamURL(): Promise<string> {
     try {
-      const streamUrl = 'https://radiolive.ytn.co.kr/radio/_definst_/20211118_fmlive/playlist.m3u8';
+      const streamUrl = YTN_STREAM_URL;
       
       const response = await fetch(streamUrl, {
         method: 'HEAD',
@@ -239,7 +244,7 @@ export class KoreanRadioAPI {
   // Arirang Radio API
   async getArirangRadioStreamURL(): Promise<string> {
     try {
-      const streamUrl = 'https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8';
+      const streamUrl = ARIRANG_STREAM_URL;
       
       const response = await fetch(streamUrl, {
         method: 'HEAD',
