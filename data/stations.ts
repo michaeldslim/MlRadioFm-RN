@@ -95,19 +95,19 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'kiss-fm',
     name: 'KISS FM 106.1',
-    url: 'https://n35a-e2.revma.ihrhls.com/zc181',
+    url: 'https://stream.revma.ihrhls.com/zc181/hls.m3u8',
     type: RadioStationType.INTERNATIONAL,
   },
   {
     id: 'star-1021',
     name: 'STAR 102.1',
-    url: 'https://n10a-e2.revma.ihrhls.com/zc2815',
+    url: 'https://stream.revma.ihrhls.com/zc2815/hls.m3u8',
     type: RadioStationType.INTERNATIONAL,
   },
   {
     id: 'new-mix',
     name: 'The New MiX 102.9',
-    url: 'https://n10a-e2.revma.ihrhls.com/zc2237',
+    url: 'https://stream.revma.ihrhls.com/zc2237/hls.m3u8',
     type: RadioStationType.INTERNATIONAL,
   },
 
