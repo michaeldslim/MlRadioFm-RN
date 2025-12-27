@@ -21,13 +21,6 @@ android/app/build/
 android/captures/
 android/local.properties
 
-# Android signing keys (do NOT commit)
-*.keystore
-*.jks
-android/app/*.keystore
-android/app/*.jks
-android/keystore.properties
-
 build/
 .idea/
 .gradle
