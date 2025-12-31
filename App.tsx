@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { useKeepAwake } from 'expo-keep-awake';
 import { Header } from './components/Header';
 import { ControlPanel } from './components/ControlPanel';
 import { CategoryTabs } from './components/CategoryTabs';
@@ -9,6 +10,11 @@ import { radioStations } from './data/stations';
 import { StationCategory } from './types';
 import { filterStationsByCategory } from './utils/categoryUtils';
 import { LanguageProvider } from './contexts/LanguageContext';
+
+function PlayerKeepAwake() {
+  useKeepAwake('radio-player');
+  return null;
+}
 
 export default function App() {
   const [searchText, setSearchText] = useState('');
@@ -67,6 +73,7 @@ export default function App() {
         <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
         
         <View style={styles.content}>
+          {playerState.isPlaying && <PlayerKeepAwake />}
           {/* Header */}
           <Header
             playerState={playerState}
