@@ -1,0 +1,21 @@
+# Dependencies (reinstalled inside container)
+node_modules/
+
+# Android & iOS build artifacts
+android/build/
+android/app/build/
+ios/build/
+ios/Pods/
+ios/DerivedData/
+
+# Expo local files
+.expo/
+dist/
+
+# Git
+.git/
+.gitignore
+
+# Misc
+*.log
+.DS_Store
