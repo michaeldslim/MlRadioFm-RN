@@ -40,6 +40,65 @@ For Korean stations, use URL schemes:
 - `mbc://channel` for MBC stations  
 - `sbs://channel` for SBS stations
 
+## EAS / OTA Updates
+
+This project uses [Expo Application Services (EAS)](https://expo.dev/eas) for builds and Over-the-Air (OTA) updates via `expo-updates`.
+
+### Setup
+
+Install EAS CLI globally:
+
+```bash
+npm install -g eas-cli
+```
+
+Log in to your Expo account:
+
+```bash
+eas login
+```
+
+Initialize the project (links to your EAS account and fills in `projectId` in `app.json`):
+
+```bash
+eas init
+```
+
+### Building
+
+```bash
+# Build for production (Android AAB + iOS IPA)
+eas build --platform android --profile production
+eas build --platform ios --profile production
+
+# Build both platforms at once
+eas build --platform all --profile production
+
+# Build for internal testing
+eas build --platform android --profile preview
+eas build --platform ios --profile preview
+```
+
+### Pushing OTA Updates
+
+Send a JS/asset update to users without a new store release:
+
+```bash
+# Push to production branch
+eas update --branch production --message "Fix: station stream URLs"
+
+# Push to preview branch
+eas update --branch preview --message "Test: new feature"
+```
+
+Users on a matching `runtimeVersion` receive the update automatically on next app load.
+
+### Runtime Version Policy
+
+The project uses `"policy": "appVersion"`. This means:
+- Users on the same native build (same `version` in `app.json`) can receive OTA updates.
+- Bumping `version` in `app.json` creates a new runtime version and requires a new native build.
+
 ## License
 
 MIT License - see LICENSE file for details.

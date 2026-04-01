@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.mlradio.fm'
+    namespace 'com.mike008.mlradiofm'
     defaultConfig {
-        applicationId 'com.mlradio.fm'
+        applicationId 'com.mike008.mlradiofm'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

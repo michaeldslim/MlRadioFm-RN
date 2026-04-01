@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ML Radio FM",
-    "slug": "ml-radio-fm",
+    "slug": "mlradiofm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mlradio.fm"
+      "bundleIdentifier": "com.mike008.mlradiofm"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +25,7 @@
         "backgroundColor": "#f8f9fa"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mlradio.fm",
+      "package": "com.mike008.mlradiofm",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -37,7 +37,18 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-av"
-    ]
+      "expo-av",
+      "expo-updates"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/d4747e09-baac-4e06-8b8d-4ae441dea67b"
+    },
+    "runtimeVersion": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "d4747e09-baac-4e06-8b8d-4ae441dea67b"
+      }
+    },
+    "owner": "mike008"
   }
 }
