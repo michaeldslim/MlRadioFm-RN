@@ -1,10 +1,14 @@
 import React from 'react';
+import appJson from '../app.json';
 import { View, Text, StyleSheet } from 'react-native';
+
+export const APP_VERSION = appJson.expo.version;
 
 export const Copyright: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Copyright © 2025 Michaeldslim</Text>
+      <Text style={styles.text}>v{APP_VERSION}</Text>
     </View>
   );
 };
