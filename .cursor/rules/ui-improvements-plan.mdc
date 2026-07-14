@@ -10,7 +10,8 @@ alwaysApply: false
 
 Single-screen Expo radio app. Layout: Header → ControlPanel → CategoryTabs → StationList.
 Playback via `useRadioPlayer()` / `RadioPlayerService`. Hook signal: `playerState.isPlaying`.
-`expo-keep-awake` already active while playing. No dimming logic exists yet.
+`expo-keep-awake` active while playing (screen stays on, playback stable on Galaxy).
+Screen dimming via **in-app overlay only** — `expo-brightness` was tried and reverted.
 
 ## UI Improvement 1: Pinned Mini Player Bar ✅ DONE
 
@@ -35,36 +36,48 @@ Playback via `useRadioPlayer()` / `RadioPlayerService`. Hook signal: `playerStat
 
 **Follow-up (optional):** Map `RadioPlayerService` error messages through i18n in the UI layer
 
-## Feature: Screen Dim to ~60% After 10 Seconds ✅ DONE
+## Feature: Screen Dim via Overlay After 10 Seconds ✅ DONE
 
-**Goal:** After 10 continuous seconds of playback, dim screen to ~60% brightness. Audio continues. Tap restores brightness and resets timer.
+**Goal:** After 10 continuous seconds of playback, dim screen visually. Audio continues. Tap restores and resets timer.
+
+**Approach:** In-app overlay only (does not change system brightness; minimal battery savings)
 
 **Completed:**
-- `hooks/useScreenDimmer.ts` — 10s timer (3s in `__DEV__`), handles pause/stop/station change/AppState
-- `components/ScreenDimOverlay.tsx` — full-screen `rgba(0,0,0,0.4)` overlay, tap to wake
-- Wired in `App.tsx`; i18n hint via `screenDimmedHint`
-- `PlayerKeepAwake` unchanged — dimming and keep-awake coexist
+- `hooks/useScreenDimmer.ts` — 10s timer (3s in `__DEV__`), gated on `isPlaying && !isLoading`
+- `components/ScreenDimOverlay.tsx` — full-screen `rgba(0,0,0,0.7)` overlay (~30% perceived brightness)
+- Transparent tap layer with hint; tap calls `wake()` to dismiss overlay
+- Wired in `App.tsx`; i18n via `screenDimmedHint` (`탭하여 화면 켜기` / `Tap to wake screen`)
+- `PlayerKeepAwake` active during playback — dimming and keep-awake coexist
+
+**Note:** Overlay blocks UI interaction while dimmed; does not turn screen off.
 
 ## Behavior Matrix
 
 | Event | Action |
 |-------|--------|
-| `isPlaying` → true | Start 10s timer |
+| `isPlaying && !isLoading` | Start 10s timer |
 | Timer fires | Show dim overlay |
-| User taps | Hide overlay, restart timer if playing |
+| User taps | Hide overlay, restart timer if still playing |
 | Pause / Stop | Clear timer, remove overlay |
 | Station switch while playing | Reset timer |
-| App backgrounded | Clear overlay (restore on foreground if still playing) |
+| App backgrounded | Clear overlay (restart timer on foreground if still playing) |
 
 ## Implementation Order
 
 1. ~~i18n in ControlPanel~~ ✅ Done
 2. ~~MiniPlayerBar~~ ✅ Done
-3. ~~useScreenDimmer + ScreenDimOverlay~~ ✅ Done
+3. ~~useScreenDimmer + ScreenDimOverlay~~ ✅ Done (overlay-only)
 
-## Out of Scope (Future)
+## Out of Scope / Tried & Reverted
 
+- `expo-brightness` — tested on Galaxy S25; app/system brightness unreliable; reverted to overlay-only
+- Removing `keep-awake` for screen auto-off — caused playback to stop on Galaxy background
 - Centralized theme / dark mode
 - Lock-screen now playing controls
 - User-configurable dim delay
-- System brightness via `expo-brightness`
+
+## Known Limitations
+
+- `isLoading` flicker during stream buffering may reset dim timer
+- Overlay dims app UI only; backlight stays on (`keep-awake`)
+- Plan opacity: adjust `backgroundColor` in `ScreenDimOverlay.tsx` (currently `0.7`)
