@@ -1,0 +1,88 @@
+---
+description: UI improvements and screen dimmer feature plan for MlRadioFm-RN
+globs: App.tsx,components/**,hooks/**,locales/**
+alwaysApply: false
+---
+
+# UI Improvements & Screen Dimmer Plan
+
+## Context
+
+Single-screen Expo radio app. Layout: Header → ControlPanel → CategoryTabs → StationList.
+Playback via `useRadioPlayer()` / `RadioPlayerService`. Hook signal: `playerState.isPlaying`.
+`expo-keep-awake` already active while playing. No dimming logic exists yet.
+
+## UI Improvement 1: Pinned Mini Player Bar
+
+**Problem:** ControlPanel scrolls off-screen when browsing the station list.
+
+**Implementation:**
+- Add `components/MiniPlayerBar.tsx` — fixed to bottom, visible when `currentStation` is set
+- Show: station name, play/pause, stop (reuse `togglePlayPause`, `stop` from App.tsx)
+- Respect bottom safe area inset (home indicator on iOS)
+- Optional later: expandable volume or dim-mode indicator
+
+**Files:** `components/MiniPlayerBar.tsx` (new), `App.tsx` (wire up)
+
+## UI Improvement 2: Finish i18n in ControlPanel ✅ DONE
+
+**Problem:** ControlPanel uses hardcoded Korean (`연결 중...`, `볼륨`) while other components use `useLanguage()`.
+
+**Completed:**
+- `useLanguage()` wired into `ControlPanel.tsx`
+- Loading and volume labels use `t.loading`, `t.volume`
+- Play/pause/stop buttons use `t.play`, `t.pause`, `t.stop` as accessibility labels
+
+**Follow-up (optional):** Map `RadioPlayerService` error messages through i18n in the UI layer
+
+## Feature: Screen Dim to ~70% After 1 Minute
+
+**Goal:** After 1 continuous minute of playback, dim screen to ~70% brightness. Audio continues. Tap restores brightness and resets timer.
+
+**Approach:** In-app overlay (preferred over `expo-brightness`)
+- Full-screen `View` with `backgroundColor: 'rgba(0,0,0,0.3)'` (~70% perceived brightness)
+- Does not alter system brightness; works consistently on iOS and Android
+- Keep `PlayerKeepAwake` — dimming and keep-awake coexist
+
+**Hook: `hooks/useScreenDimmer.ts`**
+- Watch `playerState.isPlaying`
+- Start 1-min timer when `isPlaying` becomes true (not during `isLoading`)
+- Set `isDimmed = true` after timeout
+- Clear timer + remove overlay on pause, stop, or station change
+- Tap → `isDimmed = false`, restart timer if still playing
+- `__DEV__` override: optional 10s timer for testing
+
+**Component: `components/ScreenDimOverlay.tsx`**
+- Absolute positioned, high zIndex, tappable to wake
+- Optional hint text via i18n (`screenDimmedHint`)
+
+**Integration in `App.tsx`:**
+```tsx
+const { isDimmed, wake } = useScreenDimmer(playerState);
+// ...
+<ScreenDimOverlay visible={isDimmed} onPress={wake} />
+```
+
+## Behavior Matrix
+
+| Event | Action |
+|-------|--------|
+| `isPlaying` → true | Start 1-min timer |
+| Timer fires | Show dim overlay |
+| User taps | Hide overlay, restart timer if playing |
+| Pause / Stop | Clear timer, remove overlay |
+| Station switch while playing | Reset timer |
+| App backgrounded | Clear overlay (restore on foreground if still playing) |
+
+## Implementation Order
+
+1. ~~i18n in ControlPanel~~ ✅ Done
+2. MiniPlayerBar (~1–2 hrs) — **next**
+3. useScreenDimmer + ScreenDimOverlay (~1–2 hrs)
+
+## Out of Scope (Future)
+
+- Centralized theme / dark mode
+- Lock-screen now playing controls
+- User-configurable dim delay
+- System brightness via `expo-brightness`
