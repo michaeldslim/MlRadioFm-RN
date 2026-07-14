@@ -7,7 +7,9 @@ import { ControlPanel } from './components/ControlPanel';
 import { CategoryTabs } from './components/CategoryTabs';
 import { StationList } from './components/StationList';
 import { MiniPlayerBar } from './components/MiniPlayerBar';
+import { ScreenDimOverlay } from './components/ScreenDimOverlay';
 import { useRadioPlayer } from './hooks/useRadioPlayer';
+import { useScreenDimmer } from './hooks/useScreenDimmer';
 import { radioStations } from './data/stations';
 import { StationCategory } from './types';
 import { filterStationsByCategory } from './utils/categoryUtils';
@@ -31,6 +33,7 @@ export default function App() {
     setVolume,
     seek,
   } = useRadioPlayer();
+  const { isDimmed, wake } = useScreenDimmer(playerState);
 
   const filteredStations = useMemo(() => {
     let stations = radioStations;
@@ -120,6 +123,8 @@ export default function App() {
             onStop={stop}
           />
         )}
+
+        <ScreenDimOverlay visible={isDimmed} onPress={wake} />
         </SafeAreaView>
       </LanguageProvider>
     </SafeAreaProvider>

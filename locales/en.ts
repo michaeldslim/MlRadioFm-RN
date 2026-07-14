@@ -34,6 +34,7 @@ export const en = {
   playing: 'Playing',
   paused: 'Paused',
   stopped: 'Stopped',
+  screenDimmedHint: 'Tap to wake screen',
   
   // Language
   language: 'Language',
