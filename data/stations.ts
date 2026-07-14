@@ -43,6 +43,7 @@ export const radioStations: IRadioStation[] = [
   {
     id: 'mbc-fm4u',
     name: 'MBC FM4U',
+    nameEn: 'MBC FM4U',
     url: 'mbc://mfm',
     type: RadioStationType.KOREAN,
   },
