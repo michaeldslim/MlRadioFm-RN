@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 import { IPlayerState } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface IControlPanelProps {
   playerState: IPlayerState;
@@ -24,6 +25,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
   onStop,
   onVolumeChange,
 }) => {
+  const { t } = useLanguage();
   const { isPlaying, isLoading, currentStation, volume, errorMessage } = playerState;
 
   return (
@@ -32,7 +34,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
       {isLoading && (
         <View style={styles.statusContainer}>
           <ActivityIndicator size="small" color="#007AFF" />
-          <Text style={styles.statusText}>연결 중...</Text>
+          <Text style={styles.statusText}>{t.loading}</Text>
         </View>
       )}
 
@@ -50,6 +52,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
           style={styles.playButton}
           onPress={onPlayPause}
           disabled={!currentStation}
+          accessibilityLabel={isPlaying ? t.pause : t.play}
         >
           <LinearGradient
             colors={
@@ -75,6 +78,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
           style={styles.stopButton}
           onPress={onStop}
           disabled={!currentStation}
+          accessibilityLabel={t.stop}
         >
           <View style={[
             styles.stopButtonBackground,
@@ -88,7 +92,7 @@ export const ControlPanel: React.FC<IControlPanelProps> = ({
       {/* Volume Control */}
       <View style={styles.volumeContainer}>
         <View style={styles.volumeHeader}>
-          <Text style={styles.volumeLabel}>볼륨</Text>
+          <Text style={styles.volumeLabel}>{t.volume}</Text>
           <Text style={styles.volumeValue}>{Math.round(volume * 100)}%</Text>
         </View>
 
