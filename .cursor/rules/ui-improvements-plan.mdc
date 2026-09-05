@@ -62,11 +62,27 @@ Screen dimming via **in-app overlay only** — `expo-brightness` was tried and r
 | Station switch while playing | Reset timer |
 | App backgrounded | Clear overlay (restart timer on foreground if still playing) |
 
+## UI Improvement 3: Galaxy Tab Landscape Layout ✅ DONE
+
+**Problem:** App is portrait-only; Galaxy Tab should default to landscape with a split layout.
+
+**Completed:**
+- `expo-screen-orientation` — phones lock portrait, tablets lock landscape on launch
+- `utils/deviceUtils.ts` — tablet detection (shortest side ≥ 600dp)
+- `hooks/useDeviceLayout.ts` — `isLandscapeTablet` for responsive layout
+- `hooks/useOrientationLock.ts` — runtime orientation lock by device class
+- `components/LandscapeDecorPanel.tsx` — gradient decor panel with animated wave rings when playing
+- `App.tsx` — landscape tablet: radio UI in left panel (~420dp), decor fills remainder
+- `app.json` orientation `"default"` + Android manifest `unspecified` (JS handles lock)
+
+**Layout:** Left panel = Header → ControlPanel → CategoryTabs → StationList + MiniPlayerBar. Right = branded decor with now-playing card.
+
 ## Implementation Order
 
 1. ~~i18n in ControlPanel~~ ✅ Done
 2. ~~MiniPlayerBar~~ ✅ Done
 3. ~~useScreenDimmer + ScreenDimOverlay~~ ✅ Done (overlay-only)
+4. ~~Galaxy Tab landscape layout~~ ✅ Done
 
 ## Out of Scope / Tried & Reverted
 
