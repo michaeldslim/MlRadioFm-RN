@@ -7,6 +7,8 @@ import { liveMediaArtwork } from '../constants/mediaAssets';
 const androidPlaybackOptions = {
   appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
   alwaysPauseOnInterruption: true,
+  // Remove the media notification immediately when playback stops.
+  stopForegroundGracePeriod: 0,
 };
 
 const transport = [Capability.Play, Capability.Pause];
@@ -32,6 +34,17 @@ export async function updateMediaControls(): Promise<void> {
     capabilities: transport,
     compactCapabilities: transport,
     notificationCapabilities: transport,
+    progressUpdateEventInterval: 0,
+    icon: liveMediaArtwork,
+  });
+}
+
+export async function clearMediaControls(): Promise<void> {
+  await TrackPlayer.updateOptions({
+    android: androidPlaybackOptions,
+    capabilities: [],
+    compactCapabilities: [],
+    notificationCapabilities: [],
     progressUpdateEventInterval: 0,
     icon: liveMediaArtwork,
   });

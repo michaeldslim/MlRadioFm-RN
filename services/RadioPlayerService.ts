@@ -1,7 +1,11 @@
 import TrackPlayer, { Event, State, TrackType } from 'react-native-track-player';
 import { IRadioStation, IPlayerState, RadioStationType, RadioError } from '../types';
 import { KoreanRadioAPI } from './KoreanRadioAPI';
-import { configureTrackPlayerOptions, updateMediaControls } from './trackPlayerConfig';
+import {
+  configureTrackPlayerOptions,
+  updateMediaControls,
+  clearMediaControls,
+} from './trackPlayerConfig';
 import { liveMediaArtwork } from '../constants/mediaAssets';
 
 const PLAYBACK_VOLUME = 1;
@@ -301,8 +305,19 @@ export class RadioPlayerService {
 
   async stop(): Promise<void> {
     this.rememberStoppedStation();
-    await this.clearQueue({ allowReset: true });
+    await this.teardownPlayback();
     this.clearPlayerUiState();
+  }
+
+  private async teardownPlayback(): Promise<void> {
+    this.clearBufferingTimeout();
+
+    try {
+      await this.clearQueue({ allowReset: true });
+      await clearMediaControls();
+    } catch (error) {
+      console.warn('Error tearing down playback:', error);
+    }
   }
 
   async handleRemotePlay(): Promise<void> {
@@ -351,15 +366,7 @@ export class RadioPlayerService {
 
   async handleRemoteStop(): Promise<void> {
     try {
-      this.rememberStoppedStation();
-      this.clearBufferingTimeout();
-
-      const queue = await TrackPlayer.getQueue();
-      if (queue.length > 0) {
-        await TrackPlayer.pause();
-      }
-
-      this.clearPlayerUiState();
+      await this.stop();
     } catch (error) {
       console.warn('Remote stop error:', error);
     }
