@@ -35,6 +35,11 @@ export const en = {
   paused: 'Paused',
   stopped: 'Stopped',
   screenDimmedHint: 'Tap to wake screen',
+
+  // Landscape tablet decor
+  landscapeTagline: 'Korean & international radio, anytime',
+  landscapeHint: 'Choose a station from the panel',
+  nowListening: 'Now listening',
   
   // Language
   language: 'Language',
