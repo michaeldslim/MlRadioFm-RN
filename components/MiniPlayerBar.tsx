@@ -25,13 +25,19 @@ export const MiniPlayerBar: React.FC<IMiniPlayerBarProps> = ({
 }) => {
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const { isPlaying, isLoading, currentStation, currentEpisode } = playerState;
+  const { isPlaying, isLoading, currentStation, errorMessage } = playerState;
 
   if (!currentStation) {
     return null;
   }
 
-  const statusText = isLoading ? t.loading : isPlaying ? t.playing : t.paused;
+  const statusText = errorMessage
+    ? errorMessage
+    : isLoading
+      ? t.loading
+      : isPlaying
+        ? t.playing
+        : t.paused;
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom }]}>
@@ -40,12 +46,9 @@ export const MiniPlayerBar: React.FC<IMiniPlayerBarProps> = ({
           <Text style={styles.stationName} numberOfLines={1}>
             {currentStation.name}
           </Text>
-          {currentEpisode && (
-            <Text style={styles.episodeTitle} numberOfLines={1}>
-              {currentEpisode.title}
-            </Text>
-          )}
-          <Text style={styles.statusText}>{statusText}</Text>
+          <Text style={[styles.statusText, errorMessage && styles.errorStatusText]}>
+            {statusText}
+          </Text>
         </View>
 
         <View style={styles.controls}>
@@ -111,15 +114,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1C1C1E',
   },
-  episodeTitle: {
-    fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
   statusText: {
     fontSize: 11,
     color: '#007AFF',
     marginTop: 2,
+  },
+  errorStatusText: {
+    color: '#FF9500',
   },
   controls: {
     flexDirection: 'row',

@@ -3,7 +3,6 @@ import { View, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { deactivateKeepAwake, ExpoKeepAwakeTag } from 'expo-keep-awake';
 import { Header } from './components/Header';
-import { ControlPanel } from './components/ControlPanel';
 import { CategoryTabs } from './components/CategoryTabs';
 import { StationList } from './components/StationList';
 import { MiniPlayerBar } from './components/MiniPlayerBar';
@@ -46,8 +45,6 @@ function AppContent() {
     playStation,
     togglePlayPause,
     stop,
-    setVolume,
-    seek,
   } = useRadioPlayer();
 
   const filteredStations = useMemo(() => {
@@ -77,14 +74,6 @@ function AppContent() {
     await playStation(station);
   };
 
-  const handleVolumeChange = async (volume: number) => {
-    await setVolume(volume);
-  };
-
-  const handleSeek = async (progress: number) => {
-    await seek(progress);
-  };
-
   const radioMain = (
     <>
       <Header
@@ -93,12 +82,6 @@ function AppContent() {
         showingSearch={showingSearch}
         onSearchToggle={handleSearchToggle}
         onSearchTextChange={setSearchText}
-      />
-      <ControlPanel
-        playerState={playerState}
-        onPlayPause={togglePlayPause}
-        onStop={stop}
-        onVolumeChange={handleVolumeChange}
       />
       <CategoryTabs
         selectedCategory={selectedCategory}
@@ -110,7 +93,6 @@ function AppContent() {
           stations={filteredStations}
           playerState={playerState}
           onStationSelect={handleStationSelect}
-          onSeek={handleSeek}
           selectedCategory={selectedCategory}
         />
       </View>
