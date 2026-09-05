@@ -2,7 +2,7 @@
   "expo": {
     "name": "ML Radio FM RN",
     "slug": "mlradiofm",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -47,7 +47,7 @@
     "updates": {
       "url": "https://u.expo.dev/d4747e09-baac-4e06-8b8d-4ae441dea67b"
     },
-    "runtimeVersion": "2.0.0",
+    "runtimeVersion": "2.0.1",
     "extra": {
       "eas": {
         "projectId": "d4747e09-baac-4e06-8b8d-4ae441dea67b"
