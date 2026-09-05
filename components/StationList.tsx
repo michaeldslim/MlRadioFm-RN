@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
 import { IRadioStation, IPlayerState, RadioStationType } from '../types';
 import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,7 +18,6 @@ interface IStationListProps {
   stations: IRadioStation[];
   playerState: IPlayerState;
   onStationSelect: (station: IRadioStation) => void;
-  onSeek?: (progress: number) => void;
   selectedCategory?: StationCategory;
 }
 
@@ -27,19 +25,9 @@ export const StationList: React.FC<IStationListProps> = ({
   stations,
   playerState,
   onStationSelect,
-  onSeek,
   selectedCategory,
 }) => {
   const { t, language } = useLanguage();
-  const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds) || seconds < 0) return '0:00';
-    
-    const totalSeconds = Math.floor(seconds);
-    const minutes = Math.floor(totalSeconds / 60);
-    const remainingSeconds = totalSeconds % 60;
-    
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   const getKoreanPrefix = (station: IRadioStation) => {
     if (station.type !== RadioStationType.KOREAN) return '';
@@ -56,7 +44,6 @@ export const StationList: React.FC<IStationListProps> = ({
     const isPlaying = isCurrentStation && playerState.isPlaying;
     const isLoading = isCurrentStation && playerState.isLoading;
 
-    // Assume selectedCategory is available via prop or context
     const showPrefix = typeof selectedCategory !== 'undefined' && (selectedCategory === StationCategory.ALL || (selectedCategory === StationCategory.OTHER && (station.url.startsWith('bbs://') || station.url.startsWith('ytn://'))));
     const prefix = showPrefix ? getKoreanPrefix(station) : '';
 
@@ -67,9 +54,9 @@ export const StationList: React.FC<IStationListProps> = ({
           isCurrentStation && styles.currentStationItem,
         ]}
         onPress={() => onStationSelect(station)}
+        activeOpacity={0.7}
       >
         <View style={styles.stationContent}>
-          {/* Station Indicator */}
           <View style={styles.indicatorContainer}>
             <View
               style={[
@@ -83,19 +70,17 @@ export const StationList: React.FC<IStationListProps> = ({
             </View>
           </View>
 
-          {/* Station Info */}
           <View style={styles.stationInfo}>
             <Text style={styles.stationName} numberOfLines={2}>
               {prefix}{station.name.replace(/^(KBS|MBC|SBS|YTN|BBS)\s+/, '')}
             </Text>
-            
-            {/* English subtitle for Korean stations when English is active */}
+
             {language === 'en' && station.nameEn && station.type === RadioStationType.KOREAN && (
               <Text style={styles.stationNameEn} numberOfLines={1}>
                 {station.nameEn}
               </Text>
             )}
-            
+
             <View style={styles.stationMeta}>
               <Ionicons
                 name={getStationTypeIcon(station.type) as any}
@@ -106,49 +91,8 @@ export const StationList: React.FC<IStationListProps> = ({
                 {getStationTypeText(station.type, language)}
               </Text>
             </View>
-
-            {/* Podcast Episode Info */}
-            {station.type === RadioStationType.PODCAST && 
-             isCurrentStation && 
-             playerState.currentEpisode && (
-              <View style={styles.episodeInfo}>
-                {playerState.currentEpisode.number && (
-                  <Text style={styles.episodeNumber}>
-                    {t.episodePrefix}{playerState.currentEpisode.number}
-                  </Text>
-                )}
-                <Text style={styles.episodeTitle} numberOfLines={2}>
-                  {playerState.currentEpisode.title}
-                </Text>
-
-                {/* Progress Bar for Podcasts */}
-                {isPlaying && playerState.duration > 0 && onSeek && (
-                  <View style={styles.progressContainer}>
-                    <Slider
-                      style={styles.progressSlider}
-                      minimumValue={0}
-                      maximumValue={1}
-                      value={playerState.progress}
-                      onValueChange={onSeek}
-                      minimumTrackTintColor="#FF9500"
-                      maximumTrackTintColor="#E5E5EA"
-                      thumbTintColor="#FF9500"
-                    />
-                    <View style={styles.timeContainer}>
-                      <Text style={styles.timeText}>
-                        {formatTime(playerState.currentTime)}
-                      </Text>
-                      <Text style={styles.timeText}>
-                        {formatTime(playerState.duration)}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
           </View>
 
-          {/* Playing Status */}
           <View style={styles.statusContainer}>
             {isCurrentStation && (
               <>
@@ -182,6 +126,7 @@ export const StationList: React.FC<IStationListProps> = ({
       data={stations}
       renderItem={renderStationItem}
       keyExtractor={(item) => item.id}
+      extraData={playerState}
       contentContainerStyle={styles.listContainer}
       ListEmptyComponent={renderEmptyState}
       ListFooterComponent={renderFooter}
@@ -193,7 +138,7 @@ export const StationList: React.FC<IStationListProps> = ({
 const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 100, // Increased bottom padding for podcast controls
+    paddingBottom: 100,
   },
   stationItem: {
     backgroundColor: 'rgba(205, 220, 196, 0.5)',
@@ -256,41 +201,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#8E8E93',
     marginLeft: 6,
-  },
-  episodeInfo: {
-    marginTop: 12,
-    paddingTop: 12,
-    paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(142, 142, 147, 0.2)',
-  },
-  episodeNumber: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FF9500',
-    marginBottom: 2,
-  },
-  episodeTitle: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginBottom: 8,
-  },
-  progressContainer: {
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  progressSlider: {
-    height: 24,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -4,
-  },
-  timeText: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#8E8E93',
   },
   statusContainer: {
     marginLeft: 8,

@@ -7,11 +7,6 @@ export const useRadioPlayer = () => {
     isPlaying: false,
     isLoading: false,
     currentStation: null,
-    currentEpisode: null,
-    volume: 0.5,
-    currentTime: 0,
-    duration: 0,
-    progress: 0,
     errorMessage: null,
   });
 
@@ -35,20 +30,10 @@ export const useRadioPlayer = () => {
     await radioService.stop();
   }, []);
 
-  const setVolume = useCallback(async (volume: number) => {
-    await radioService.setVolume(volume);
-  }, []);
-
-  const seek = useCallback(async (progress: number) => {
-    await radioService.seek(progress);
-  }, []);
-
   return {
     playerState,
     playStation,
     togglePlayPause,
     stop,
-    setVolume,
-    seek,
   };
 };

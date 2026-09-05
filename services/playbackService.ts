@@ -12,10 +12,6 @@ export async function PlaybackService(): Promise<void> {
     void radioService.handleRemotePause();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => {
-    void radioService.handleRemoteSeek(position);
-  });
-
   TrackPlayer.addEventListener(Event.RemoteStop, () => {
     void radioService.handleRemoteStop();
   });

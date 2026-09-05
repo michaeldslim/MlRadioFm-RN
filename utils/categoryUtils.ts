@@ -32,11 +32,6 @@ export const categoryInfo: Record<StationCategory, IStationCategoryInfo> = {
     icon: 'globe-outline',
     color: '#5856D6',
   },
-  [StationCategory.PODCAST]: {
-    category: StationCategory.PODCAST,
-    icon: 'mic',
-    color: '#FF2D92',
-  },
 };
 
 export const filterStationsByCategory = (
@@ -72,8 +67,6 @@ export const filterStationsByCategory = (
     }
     case StationCategory.INTERNATIONAL:
       return stations.filter(station => station.type === RadioStationType.INTERNATIONAL);
-    case StationCategory.PODCAST:
-      return stations.filter(station => station.type === RadioStationType.PODCAST);
     default:
       return stations;
   }
@@ -86,22 +79,18 @@ export const getStationTypeText = (type: RadioStationType, language: Language = 
         return '한국 라디오';
       case RadioStationType.INTERNATIONAL:
         return '해외 라디오';
-      case RadioStationType.PODCAST:
-        return '팟캐스트';
       default:
         return '';
     }
-  } else {
-    switch (type) {
-      case RadioStationType.KOREAN:
-        return 'Korean Radio';
-      case RadioStationType.INTERNATIONAL:
-        return 'International';
-      case RadioStationType.PODCAST:
-        return 'Podcast';
-      default:
-        return '';
-    }
+  }
+
+  switch (type) {
+    case RadioStationType.KOREAN:
+      return 'Korean Radio';
+    case RadioStationType.INTERNATIONAL:
+      return 'International';
+    default:
+      return '';
   }
 };
 
@@ -111,8 +100,6 @@ export const getStationTypeIcon = (type: RadioStationType): string => {
       return 'radio-outline';
     case RadioStationType.INTERNATIONAL:
       return 'globe';
-    case RadioStationType.PODCAST:
-      return 'mic';
     default:
       return 'radio';
   }
@@ -133,29 +120,25 @@ export const getCategoryDisplayName = (category: StationCategory, language: Lang
         return '기타';
       case StationCategory.INTERNATIONAL:
         return '해외';
-      case StationCategory.PODCAST:
-        return '팟캐스트';
       default:
         return category;
     }
-  } else {
-    switch (category) {
-      case StationCategory.ALL:
-        return 'All';
-      case StationCategory.KBS:
-        return 'KBS';
-      case StationCategory.MBC:
-        return 'MBC';
-      case StationCategory.SBS:
-        return 'SBS';
-      case StationCategory.OTHER:
-        return 'Other';
-      case StationCategory.INTERNATIONAL:
-        return 'International';
-      case StationCategory.PODCAST:
-        return 'Podcast';
-      default:
-        return category;
-    }
+  }
+
+  switch (category) {
+    case StationCategory.ALL:
+      return 'All';
+    case StationCategory.KBS:
+      return 'KBS';
+    case StationCategory.MBC:
+      return 'MBC';
+    case StationCategory.SBS:
+      return 'SBS';
+    case StationCategory.OTHER:
+      return 'Other';
+    case StationCategory.INTERNATIONAL:
+      return 'International';
+    default:
+      return category;
   }
 };

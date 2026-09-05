@@ -1,4 +1,4 @@
-// Central configuration for radio and podcast stream URLs and helpers
+// Central configuration for radio stream URLs and helpers
 
 export const IHEART_BASE = 'https://stream.revma.ihrhls.com';
 
@@ -8,11 +8,6 @@ export const makeIHeartUrl = (zcCode: number | string): string => {
 
 // Direct international streams
 export const WAYFM_897_STREAM_URL = 'https://ais-sa8.cdnstream1.com/3144_64.aac';
-
-// Podcast feed URLs (not the episode audio URLs)
-export const PODCAST_FEEDS: Record<string, string> = {
-  'syntax-fm': 'https://feed.syntax.fm/rss',
-};
 
 // Korean broadcaster API bases and stream URLs
 export const KBS_API_BASE = 'https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code';

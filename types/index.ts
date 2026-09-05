@@ -1,7 +1,6 @@
 export enum RadioStationType {
   KOREAN = 'korean',
   INTERNATIONAL = 'international',
-  PODCAST = 'podcast'
 }
 
 export enum StationCategory {
@@ -11,7 +10,6 @@ export enum StationCategory {
   SBS = 'SBS',
   OTHER = '기타',
   INTERNATIONAL = '해외',
-  PODCAST = '팟캐스트'
 }
 
 export interface IRadioStation {
@@ -22,21 +20,10 @@ export interface IRadioStation {
   type: RadioStationType;
 }
 
-export interface IPodcastEpisode {
-  title: string;
-  number?: string;
-  audioURL: string;
-}
-
 export interface IPlayerState {
   isPlaying: boolean;
   isLoading: boolean;
   currentStation: IRadioStation | null;
-  currentEpisode: IPodcastEpisode | null;
-  volume: number;
-  currentTime: number;
-  duration: number;
-  progress: number;
   errorMessage: string | null;
 }
 
@@ -56,5 +43,5 @@ export enum RadioError {
   INVALID_URL = 'INVALID_URL',
   NO_STREAM_URL = 'NO_STREAM_URL',
   NO_STREAM_FOUND = 'NO_STREAM_FOUND',
-  NETWORK_ERROR = 'NETWORK_ERROR'
+  NETWORK_ERROR = 'NETWORK_ERROR',
 }

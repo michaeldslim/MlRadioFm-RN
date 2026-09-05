@@ -1,5 +1,5 @@
 import { IRadioStation, RadioStationType } from '../types';
-import { makeIHeartUrl, WAYFM_897_STREAM_URL, PODCAST_FEEDS } from '../services/StreamConfig';
+import { makeIHeartUrl, WAYFM_897_STREAM_URL } from '../services/StreamConfig';
 
 export const radioStations: IRadioStation[] = [
   // KBS 라디오
@@ -118,13 +118,5 @@ export const radioStations: IRadioStation[] = [
     name: 'Way-FM 89.7',
     url: WAYFM_897_STREAM_URL,
     type: RadioStationType.INTERNATIONAL,
-  },
-
-  // Podcasts
-  {
-    id: 'syntax-fm',
-    name: 'Syntax.fm',
-    url: PODCAST_FEEDS['syntax-fm'],
-    type: RadioStationType.PODCAST,
   },
 ];
