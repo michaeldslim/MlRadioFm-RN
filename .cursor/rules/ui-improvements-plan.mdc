@@ -10,8 +10,7 @@ alwaysApply: false
 
 Single-screen Expo radio app. Layout: Header → ControlPanel → CategoryTabs → StationList.
 Playback via `useRadioPlayer()` / `RadioPlayerService`. Hook signal: `playerState.isPlaying`.
-`expo-keep-awake` active while playing (screen stays on, playback stable on Galaxy).
-Screen dimming via **in-app overlay only** — `expo-brightness` was tried and reverted.
+Screen may turn off during playback; audio continues via track-player background service.
 
 ## UI Improvement 1: Pinned Mini Player Bar ✅ DONE
 
@@ -36,31 +35,9 @@ Screen dimming via **in-app overlay only** — `expo-brightness` was tried and r
 
 **Follow-up (optional):** Map `RadioPlayerService` error messages through i18n in the UI layer
 
-## Feature: Screen Dim via Overlay After 10 Seconds ✅ DONE
+## Feature: Screen Dim via Overlay ~~REMOVED~~
 
-**Goal:** After 10 continuous seconds of playback, dim screen visually. Audio continues. Tap restores and resets timer.
-
-**Approach:** In-app overlay only (does not change system brightness; minimal battery savings)
-
-**Completed:**
-- `hooks/useScreenDimmer.ts` — 10s timer (3s in `__DEV__`), gated on `isPlaying && !isLoading`
-- `components/ScreenDimOverlay.tsx` — full-screen `rgba(0,0,0,0.7)` overlay (~30% perceived brightness)
-- Transparent tap layer with hint; tap calls `wake()` to dismiss overlay
-- Wired in `App.tsx`; i18n via `screenDimmedHint` (`탭하여 화면 켜기` / `Tap to wake screen`)
-- `PlayerKeepAwake` active during playback — dimming and keep-awake coexist
-
-**Note:** Overlay blocks UI interaction while dimmed; does not turn screen off.
-
-## Behavior Matrix
-
-| Event | Action |
-|-------|--------|
-| `isPlaying && !isLoading` | Start 10s timer |
-| Timer fires | Show dim overlay |
-| User taps | Hide overlay, restart timer if still playing |
-| Pause / Stop | Clear timer, remove overlay |
-| Station switch while playing | Reset timer |
-| App backgrounded | Clear overlay (restart timer on foreground if still playing) |
+**Removed:** Background playback via track-player makes overlay dim unnecessary. Deleted `useScreenDimmer`, `ScreenDimOverlay`, and `screenDimmedHint` i18n.
 
 ## UI Improvement 3: Galaxy Tab Landscape Layout ✅ DONE
 
@@ -77,73 +54,54 @@ Screen dimming via **in-app overlay only** — `expo-brightness` was tried and r
 
 **Layout:** Left panel = Header → ControlPanel → CategoryTabs → StationList + MiniPlayerBar. Right = branded decor with now-playing card.
 
-## Feature: Background Playback & Media Controls (Planned)
+## Feature: Background Playback & Media Controls ✅ DONE
 
-**Problem:** Playback is tied to `expo-av` + `expo-keep-awake`. Switching apps or turning the screen off is unreliable on Galaxy; no notification or lock-screen controls.
+**Problem:** Playback was tied to `expo-av` + `expo-keep-awake`. Switching apps or turning the screen off was unreliable on Galaxy; no notification or lock-screen controls.
 
-**Goal:** Play radio while using other apps. Stable background audio on Galaxy. Notification + lock-screen play/pause/stop. Optional: remove or optionize `keep-awake` after background is stable.
+**Goal:** Play radio while using other apps. Stable background audio on Galaxy. Notification + lock-screen play/pause/stop.
 
-**Approach:** Expo prebuild/dev build (already in use via `expo run:android`). Add `react-native-track-player` — not Expo Go. Migrate `RadioPlayerService` from `expo-av` to track-player. UI (`useRadioPlayer`, ControlPanel, MiniPlayerBar) stays on the same hook interface where possible.
+**Approach:** `react-native-track-player@4.1.2` with Expo dev build (`expo run:android`). `RadioPlayerService` migrated from `expo-av` to track-player. UI (`useRadioPlayer`, ControlPanel, MiniPlayerBar) unchanged.
 
-**Why not Expo SDK only:** `expo-av` supports `staysActiveInBackground` but lacks Foreground Service, media notification, and lock-screen Now Playing. `FOREGROUND_SERVICE` is declared in `app.json` but not wired.
+**Completed:**
+- `react-native-track-player@4.1.2` requires **New Architecture disabled** (`newArchEnabled: false`) — v4 is incompatible with TurboModules
+- `services/playbackService.ts` — remote play/pause/stop handlers
+- `services/trackPlayerConfig.ts` — notification capabilities (play/pause only; stop is in-app)
+- `services/RadioPlayerService.ts` — track-player queue, live streams, podcast seek/progress
+- `index.ts` — `TrackPlayer.registerPlaybackService()`
+- `app.json` — `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, iOS `UIBackgroundModes: audio`
+- Android manifest + `strings.xml` notification channel (`ML Radio FM`)
+- Live stream notification/lock-screen uses static wave-ring artwork (`assets/live-artwork/frame-00.png`)
+- `appKilledPlaybackBehavior: StopPlaybackAndRemoveNotification` — swipe app away from recents stops playback and removes notification; background play while multitasking still works
+- ~~`PlayerKeepAwake` / `expo-keep-awake`~~ removed — screen auto-off during playback; audio via track-player
+- Expo **dev builds** auto-enable keep-awake on Android (`withDevTools`); `App.tsx` calls `deactivateKeepAwake(ExpoKeepAwakeTag)` on launch
 
-### Planned steps
-
-| # | Step | Scope |
-|---|------|--------|
-| 1 | Install & configure `react-native-track-player` | `package.json`, `app.json`, Android manifest, playback service entry |
-| 2 | Add playback service bootstrap | `index.ts` or `services/playbackService.ts` — register remote events |
-| 3 | Migrate `RadioPlayerService` | Replace `expo-av` `Audio.Sound` with track-player API; keep singleton + subscribe pattern |
-| 4 | Live stream playback | Korean/international stations — `Track` with stream URL |
-| 5 | Podcast playback | Episode URL, seek/progress via track-player position events |
-| 6 | Media notification & lock-screen | Station title, play/pause/stop actions (track-player built-in) |
-| 7 | Android permissions | `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (Android 14+), verify Galaxy background |
-| 8 | Galaxy real-device QA | Background, screen off, station switch, phone call / audio focus |
-| 9 | `keep-awake` policy | Remove default `PlayerKeepAwake` or make user-toggle after step 8 passes |
-| 10 | i18n for notification labels | Optional — `locales/` for notification channel / action text if customizable |
-
-### Behavior matrix (target)
-
-| Event | Action |
-|-------|--------|
-| User leaves app while playing | Audio continues; media notification visible |
-| User taps pause in notification | Pause; UI syncs via `RadioPlayerService` state |
-| Screen turns off | Audio continues (no `keep-awake` required) |
-| Station switch while playing | Reset track; update notification metadata |
-| Network drop | Retry/reconnect logic in `RadioPlayerService` (step 8 follow-up) |
-
-### Constraints
-
-- **Expo Go:** not supported — use `expo run:android` / EAS build (current workflow)
-- **Do not remove `keep-awake` before step 8** — previously caused Galaxy playback stop in background
-- **Real device required** — emulator insufficient for Samsung background behavior
+**Pending QA (real device):**
+- Screen-off playback, station switch, phone call / audio focus on Galaxy
+- Optional: notification channel i18n + network reconnect on drop
 
 ## Implementation Order
 
 1. ~~i18n in ControlPanel~~ ✅ Done
 2. ~~MiniPlayerBar~~ ✅ Done
-3. ~~useScreenDimmer + ScreenDimOverlay~~ ✅ Done (overlay-only)
+3. ~~Screen dim overlay~~ Removed (background playback)
 4. ~~Galaxy Tab landscape layout~~ ✅ Done
-5. Install & configure `react-native-track-player`
-6. Playback service bootstrap + remote event handlers
-7. Migrate `RadioPlayerService` (live streams)
-8. Podcast seek/progress on track-player
-9. Media notification & lock-screen controls
-10. Android foreground-service permissions + Galaxy QA
-11. `keep-awake` remove or optionize (after QA)
+5. ~~Install & configure `react-native-track-player`~~ ✅ Done
+6. ~~Playback service bootstrap + remote event handlers~~ ✅ Done
+7. ~~Migrate `RadioPlayerService` (live streams)~~ ✅ Done
+8. ~~Podcast seek/progress on track-player~~ ✅ Done
+9. ~~Media notification & lock-screen controls~~ ✅ Done
+10. ~~Android foreground-service permissions~~ ✅ Done — Galaxy QA pending
+11. ~~`keep-awake` remove~~ ✅ Done
 12. (Optional) Notification i18n + network reconnect
 
 ## Out of Scope / Tried & Reverted
 
 - `expo-brightness` — tested on Galaxy S25; app/system brightness unreliable; reverted to overlay-only
-- Removing `keep-awake` for screen auto-off — caused playback to stop on Galaxy background (**retry after background playback feature, step 11**)
+- Removing `keep-awake` for screen auto-off — previously caused Galaxy playback stop with expo-av; removed after track-player migration
 - Centralized theme / dark mode
 - User-configurable dim delay
 - Picture-in-picture (tablet)
 
 ## Known Limitations
 
-- `isLoading` flicker during stream buffering may reset dim timer
-- Overlay dims app UI only; backlight stays on (`keep-awake`)
-- Plan opacity: adjust `backgroundColor` in `ScreenDimOverlay.tsx` (currently `0.7`)
-- Background playback & lock-screen controls not implemented yet — see **Feature: Background Playback & Media Controls**
+- Background playback uses track-player foreground service + media notification

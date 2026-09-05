@@ -1,13 +1,21 @@
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import TrackPlayer, { Event, State, TrackType } from 'react-native-track-player';
 import { IRadioStation, IPodcastEpisode, IPlayerState, RadioStationType, RadioError } from '../types';
 import { KoreanRadioAPI } from './KoreanRadioAPI';
 import { PodcastService } from './PodcastService';
+import { configureTrackPlayerOptions, updateMediaControls } from './trackPlayerConfig';
+import { defaultMediaArtwork, liveMediaArtwork } from '../constants/mediaAssets';
 
 export class RadioPlayerService {
   private static instance: RadioPlayerService;
-  private sound: Audio.Sound | null = null;
   private listeners: ((state: IPlayerState) => void)[] = [];
   private isChangingStation: boolean = false;
+  private setupPromise: Promise<void> | null = null;
+  private eventsRegistered = false;
+  private bufferingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private lastLogTime: number = 0;
+  private lastProgressPosition = 0;
+  private lastStoppedStation: IRadioStation | null = null;
+  private lastStoppedEpisode: IPodcastEpisode | null = null;
   private playerState: IPlayerState = {
     isPlaying: false,
     isLoading: false,
@@ -27,28 +35,62 @@ export class RadioPlayerService {
     return RadioPlayerService.instance;
   }
 
-  constructor() {
-    this.initializeAudio();
+  public async initialize(): Promise<void> {
+    await this.ensureSetup();
   }
 
-  private async initializeAudio() {
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        staysActiveInBackground: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-    } catch (error) {
-      // Audio initialization failed
+  private async ensureSetup(): Promise<void> {
+    if (!this.setupPromise) {
+      this.setupPromise = this.setupTrackPlayer();
     }
+    await this.setupPromise;
+  }
+
+  private async setupTrackPlayer(): Promise<void> {
+    await TrackPlayer.setupPlayer({
+      waitForBuffer: true,
+    });
+    await configureTrackPlayerOptions();
+    this.registerEventListeners();
+    await TrackPlayer.setVolume(this.playerState.volume);
+  }
+
+  private registerEventListeners(): void {
+    if (this.eventsRegistered) {
+      return;
+    }
+
+    TrackPlayer.addEventListener(Event.PlaybackState, ({ state }) => {
+      this.handlePlaybackState(state);
+    });
+
+    TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, ({ position, duration }) => {
+      this.handleProgress(position, duration);
+    });
+
+    TrackPlayer.addEventListener(Event.PlaybackError, () => {
+      this.clearBufferingTimeout();
+      this.updateState({
+        errorMessage: '오디오 로드 실패',
+        isPlaying: false,
+        isLoading: false,
+      });
+    });
+
+    TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
+      this.updateState({
+        isPlaying: false,
+        isLoading: false,
+      });
+    });
+
+    this.eventsRegistered = true;
   }
 
   public subscribe(listener: (state: IPlayerState) => void): () => void {
     this.listeners.push(listener);
-    listener(this.playerState); // Send current state immediately
-    
+    listener(this.playerState);
+
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
@@ -59,45 +101,48 @@ export class RadioPlayerService {
     this.listeners.forEach(listener => listener(this.playerState));
   }
 
-  async playStation(station: IRadioStation): Promise<void> {
-    // Prevent concurrent station changes
+  async playStation(station: IRadioStation, options?: { fromRemote?: boolean }): Promise<void> {
     if (this.isChangingStation) {
       console.log('Station change already in progress, ignoring request');
       return;
     }
 
     this.isChangingStation = true;
+    const fromRemote = options?.fromRemote ?? false;
 
     try {
-      // Immediately update state to prevent multiple concurrent calls
+      if (!fromRemote) {
+        await this.ensureSetup();
+      } else if (this.setupPromise) {
+        await this.setupPromise;
+      }
+
       this.updateState({
         isLoading: true,
         errorMessage: null,
         isPlaying: false,
       });
 
-      // Ensure complete cleanup of previous audio before starting new one
-      await this.stop();
-      
-      // Add a small delay to ensure audio system is ready
+      await this.clearQueue({ allowReset: !fromRemote });
+
       await new Promise(resolve => setTimeout(resolve, 100));
       let streamURL: string;
+      let episode: IPodcastEpisode | null = null;
 
       if (station.type === RadioStationType.KOREAN) {
         streamURL = await this.getKoreanStationURL(station);
       } else if (station.type === RadioStationType.PODCAST) {
         try {
           console.log('🎧 Getting podcast episode for:', station.name);
-          const episode = await this.getPodcastEpisode(station);
+          episode = await this.getPodcastEpisode(station);
           console.log('🎧 Episode loaded:', episode.title);
           this.updateState({ currentEpisode: episode });
           streamURL = episode.audioURL;
-          
-          // Validate the audio URL before proceeding
+
           if (!streamURL || (!streamURL.startsWith('http://') && !streamURL.startsWith('https://'))) {
             throw new Error('Invalid podcast audio URL');
           }
-          
+
           console.log('🎧 Using audio URL:', streamURL);
         } catch (error) {
           console.log('🎧 Podcast episode error:', error);
@@ -106,13 +151,12 @@ export class RadioPlayerService {
       } else {
         streamURL = station.url;
       }
-      
+
       if (!streamURL || streamURL.trim() === '') {
         throw new Error('Empty stream URL received');
       }
 
-      await this.playWithURL(streamURL, station);
-      
+      await this.playWithURL(streamURL, station, episode, !fromRemote);
     } catch (error) {
       this.updateState({
         errorMessage: `연결 실패: ${station.name}`,
@@ -126,7 +170,7 @@ export class RadioPlayerService {
 
   private async getKoreanStationURL(station: IRadioStation): Promise<string> {
     const api = KoreanRadioAPI.getInstance();
-    
+
     if (station.url.startsWith('kbs://')) {
       const channelCode = station.url.replace('kbs://', '');
       return await api.getKBSStreamURL(channelCode);
@@ -153,214 +197,189 @@ export class RadioPlayerService {
 
   private async getPodcastEpisode(station: IRadioStation): Promise<IPodcastEpisode> {
     const podcastService = PodcastService.getInstance();
-    
+
     try {
       const episode = await podcastService.parseLatestEpisode(station.url);
-      
+
       if (!episode || !episode.audioURL) {
         throw new Error('Invalid episode data');
       }
-      
+
       return episode;
     } catch (error) {
       throw new Error(`팟캐스트 RSS 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private bufferingTimeout: NodeJS.Timeout | null = null;
-  private lastLogTime: number = 0;
-
-  private async playWithURL(url: string, station: IRadioStation): Promise<void> {
-    try {
-      if (this.bufferingTimeout) {
-        clearTimeout(this.bufferingTimeout);
-        this.bufferingTimeout = null;
-      }
-      
-      // Different settings for podcasts vs live streams
-      const isPodcast = station.type === RadioStationType.PODCAST;
-      
-      if (isPodcast) {
-        console.log('🎧 Creating podcast audio with URL:', url);
-        
-        // Validate podcast URL
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-          throw new Error('Invalid podcast URL - must be HTTP/HTTPS');
-        }
-      }
-      
-      const audioConfig = {
-        shouldPlay: false,
-        volume: this.playerState.volume,
-        isLooping: false,
-        progressUpdateIntervalMillis: isPodcast ? 1000 : 1000, // Same interval to reduce instability
-      };
-      
-      if (isPodcast) {
-        // Podcast-specific config for stability
-        Object.assign(audioConfig, {
-          shouldCorrectPitch: false, // Disable pitch correction to reduce processing
-          rate: 1.0, // Ensure normal playback rate
-          shouldDuckAndroid: false, // Prevent audio ducking
-          staysActiveInBackground: true, // Keep active in background
-        });
-      }
-      
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
-        audioConfig,
-        this.onPlaybackStatusUpdate.bind(this)
-      );
-
-      this.sound = sound;
-      
-      if (isPodcast) {
-        console.log('🎧 Podcast sound created, starting playback...');
-      }
-      
-      await sound.playAsync();
-      
-      this.updateState({
-        currentStation: station,
-        isLoading: true,
-      });
-      
-      // Much longer timeout for podcasts as they can be large files
-      const timeoutDuration = isPodcast ? 45000 : 15000;
-      
-      this.bufferingTimeout = setTimeout(() => {
-        // Only trigger timeout if still not playing
-        if (!this.playerState.isPlaying) {
-          if (isPodcast) console.log('🎧 Podcast timeout triggered - still not playing after', timeoutDuration / 1000, 'seconds');
-          this.updateState({
-            errorMessage: `연결 시간 초과: ${station.name}`,
-            isPlaying: false,
-            isLoading: false,
-          });
-        } else {
-          if (isPodcast) console.log('🎧 Podcast timeout ignored - already playing');
-        }
-      }, timeoutDuration);
-
-    } catch (error) {
-      if (station.type === RadioStationType.PODCAST) {
-        console.log('🎧 Podcast playback error:', error);
-      }
-      throw error;
+  private resolveTrackType(url: string): TrackType {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('.m3u8')) {
+      return TrackType.HLS;
     }
+    if (lowerUrl.includes('.mpd')) {
+      return TrackType.Dash;
+    }
+    if (lowerUrl.includes('.ism')) {
+      return TrackType.SmoothStreaming;
+    }
+    return TrackType.Default;
   }
 
-  private onPlaybackStatusUpdate(status: AVPlaybackStatus) {
+  private async playWithURL(
+    url: string,
+    station: IRadioStation,
+    episode: IPodcastEpisode | null,
+    allowReset: boolean = true,
+  ): Promise<void> {
+    this.clearBufferingTimeout();
+    this.lastProgressPosition = 0;
+
+    const isPodcast = station.type === RadioStationType.PODCAST;
+
+    if (isPodcast) {
+      console.log('🎧 Creating podcast track with URL:', url);
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw new Error('Invalid podcast URL - must be HTTP/HTTPS');
+      }
+    }
+
+    const artist = isPodcast && episode
+      ? episode.title
+      : 'ML Radio FM';
+
+    await this.clearQueue({ allowReset });
+    await updateMediaControls(isPodcast);
+    await TrackPlayer.add({
+      id: station.id,
+      url,
+      title: station.name,
+      artist,
+      album: isPodcast ? 'Podcast' : 'Live Radio',
+      artwork: isPodcast ? defaultMediaArtwork : liveMediaArtwork,
+      isLiveStream: !isPodcast,
+      type: this.resolveTrackType(url),
+    });
+    await TrackPlayer.setVolume(this.playerState.volume);
+    await TrackPlayer.play();
+
+    this.updateState({
+      currentStation: station,
+      isLoading: true,
+      currentEpisode: episode,
+    });
+
+    const timeoutDuration = isPodcast ? 45000 : 15000;
+
+    this.bufferingTimeout = setTimeout(() => {
+      if (!this.playerState.isPlaying) {
+        if (isPodcast) {
+          console.log('🎧 Podcast timeout triggered - still not playing after', timeoutDuration / 1000, 'seconds');
+        }
+        this.updateState({
+          errorMessage: `연결 시간 초과: ${station.name}`,
+          isPlaying: false,
+          isLoading: false,
+        });
+      } else if (isPodcast) {
+        console.log('🎧 Podcast timeout ignored - already playing');
+      }
+    }, timeoutDuration);
+  }
+
+  private handlePlaybackState(state: State): void {
     const isPodcast = this.playerState.currentStation?.type === RadioStationType.PODCAST;
-    
-    // Reduced logging for podcasts to avoid spam
+    const isPlaying = state === State.Playing;
+    const isBuffering = state === State.Buffering || state === State.Loading;
+
     if (isPodcast && (!this.lastLogTime || Date.now() - this.lastLogTime > 5000)) {
       console.log('🎧 Podcast Status:', {
-        isLoaded: status.isLoaded,
-        isPlaying: status.isLoaded ? status.isPlaying : 'N/A',
-        isBuffering: status.isLoaded ? status.isBuffering : 'N/A',
-        position: status.isLoaded && status.positionMillis ? Math.floor(status.positionMillis / 1000) : 'N/A',
-        duration: status.isLoaded && status.durationMillis ? Math.floor(status.durationMillis / 1000) : 'N/A',
-        hasError: !status.isLoaded && 'error' in status
+        state,
+        position: this.lastProgressPosition,
+        duration: this.playerState.duration,
       });
       this.lastLogTime = Date.now();
     }
-    
-    if (status.isLoaded) {
-      // Clear buffering timeout when audio starts playing successfully
-      if (status.isPlaying && (!status.isBuffering || isPodcast)) {
-        if (this.bufferingTimeout) {
-          clearTimeout(this.bufferingTimeout);
-          this.bufferingTimeout = null;
-          if (isPodcast) console.log('🎧 Podcast timeout cleared - playback started');
-        }
-      }
-      
-      // Stable loading logic for podcasts vs live streams
-      let isActuallyLoading: boolean;
-      if (isPodcast) {
-        // For podcasts, be more lenient with buffering states
-        // Only show loading if we haven't started playing yet or if we're stuck
-        const hasStartedPlaying = status.positionMillis && status.positionMillis > 0;
-        isActuallyLoading = !hasStartedPlaying && status.isBuffering;
-      } else {
-        // For live streams, don't show loading if audio is playing (even if buffering)
-        isActuallyLoading = status.isBuffering && !status.isPlaying;
-      }
-      
-      this.updateState({
-        isPlaying: status.isPlaying,
-        isLoading: isActuallyLoading,
-        currentTime: status.positionMillis ? status.positionMillis / 1000 : 0,
-        duration: status.durationMillis ? status.durationMillis / 1000 : 0,
-        progress: status.durationMillis && status.positionMillis 
-          ? status.positionMillis / status.durationMillis 
-          : 0,
-        errorMessage: null, // Clear any previous errors when playback is working
-      });
 
-      // Handle when track finishes
-      if (status.didJustFinish) {
-        if (isPodcast) console.log('🎧 Podcast finished');
-        this.updateState({ 
-          isPlaying: false,
-          isLoading: false 
-        });
+    if (isPlaying) {
+      this.clearBufferingTimeout();
+      if (isPodcast) {
+        console.log('🎧 Podcast timeout cleared - playback started');
       }
-    } else if (!status.isLoaded && 'error' in status) {
-      // Handle audio load errors
-      if (isPodcast) console.log('🎧 Podcast load error:', status.error);
-      if (this.bufferingTimeout) {
-        clearTimeout(this.bufferingTimeout);
-        this.bufferingTimeout = null;
+    }
+
+    let isActuallyLoading: boolean;
+    if (isPodcast) {
+      const hasStartedPlaying = this.lastProgressPosition > 0;
+      isActuallyLoading = !hasStartedPlaying && isBuffering;
+    } else {
+      isActuallyLoading = isBuffering && !isPlaying;
+    }
+
+    this.updateState({
+      isPlaying,
+      isLoading: isActuallyLoading,
+      errorMessage: state === State.Error ? '오디오 로드 실패' : null,
+    });
+
+    if (state === State.Ended) {
+      if (isPodcast) {
+        console.log('🎧 Podcast finished');
       }
       this.updateState({
-        errorMessage: `오디오 로드 실패`,
         isPlaying: false,
         isLoading: false,
       });
     }
   }
 
-  async togglePlayPause(): Promise<void> {
-    if (!this.sound) return;
+  private handleProgress(position: number, duration: number): void {
+    this.lastProgressPosition = position;
 
-    try {
-      if (this.playerState.isPlaying) {
-        await this.sound.pauseAsync();
-        // Explicitly set loading to false when pausing
-        this.updateState({ isLoading: false });
-      } else {
-        await this.sound.playAsync();
-      }
-    } catch (error) {
-      // Toggle play/pause error
-    }
+    this.updateState({
+      currentTime: position,
+      duration: duration > 0 ? duration : this.playerState.duration,
+      progress: duration > 0 ? position / duration : 0,
+    });
   }
 
-  async stop(): Promise<void> {
-    // Clear buffering timeout
+  private clearBufferingTimeout(): void {
     if (this.bufferingTimeout) {
       clearTimeout(this.bufferingTimeout);
       this.bufferingTimeout = null;
     }
-    
-    if (this.sound) {
-      try {
-        // First stop the audio if it's playing
-        const status = await this.sound.getStatusAsync();
-        if (status.isLoaded && status.isPlaying) {
-          await this.sound.stopAsync();
-        }
-        
-        // Then unload the audio completely
-        await this.sound.unloadAsync();
-      } catch (error) {
-        console.warn('Error during audio cleanup:', error);
-      }
-      this.sound = null;
-    }
+  }
 
+  private async clearQueue({ allowReset }: { allowReset: boolean }): Promise<void> {
+    this.clearBufferingTimeout();
+
+    try {
+      const queue = await TrackPlayer.getQueue();
+      if (queue.length === 0) {
+        return;
+      }
+
+      if (allowReset) {
+        await TrackPlayer.stop();
+        await TrackPlayer.reset();
+        return;
+      }
+
+      await TrackPlayer.pause();
+      await TrackPlayer.remove(queue.map((_, index) => index));
+    } catch (error) {
+      console.warn('Error clearing track player queue:', error);
+    }
+  }
+
+  private rememberStoppedStation(): void {
+    if (this.playerState.currentStation) {
+      this.lastStoppedStation = this.playerState.currentStation;
+      this.lastStoppedEpisode = this.playerState.currentEpisode;
+    }
+  }
+
+  private clearPlayerUiState(): void {
     this.updateState({
       isPlaying: false,
       isLoading: false,
@@ -372,27 +391,139 @@ export class RadioPlayerService {
     });
   }
 
+  async togglePlayPause(): Promise<void> {
+    if (!this.playerState.currentStation) {
+      return;
+    }
+
+    await this.ensureSetup();
+
+    try {
+      const playbackState = await TrackPlayer.getPlaybackState();
+      if (playbackState.state === State.Playing) {
+        await TrackPlayer.pause();
+        this.updateState({ isLoading: false });
+      } else {
+        await TrackPlayer.play();
+      }
+    } catch (error) {
+      // Toggle play/pause error
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.rememberStoppedStation();
+    await this.clearQueue({ allowReset: true });
+    this.clearPlayerUiState();
+  }
+
+  async handleRemotePlay(): Promise<void> {
+    try {
+      if (this.setupPromise) {
+        await this.setupPromise;
+      }
+
+      const queue = await TrackPlayer.getQueue();
+      if (queue.length > 0) {
+        const artwork = this.lastStoppedStation?.type === RadioStationType.PODCAST
+          ? defaultMediaArtwork
+          : liveMediaArtwork;
+        await TrackPlayer.updateMetadataForTrack(0, { artwork });
+
+        if (!this.playerState.currentStation && this.lastStoppedStation) {
+          this.updateState({
+            currentStation: this.lastStoppedStation,
+            currentEpisode: this.lastStoppedEpisode,
+            isLoading: true,
+          });
+        }
+
+        const playbackState = await TrackPlayer.getPlaybackState();
+        if (playbackState.state !== State.Playing) {
+          await TrackPlayer.play();
+        }
+        return;
+      }
+
+      if (this.lastStoppedStation) {
+        await this.playStation(this.lastStoppedStation, { fromRemote: true });
+      }
+    } catch (error) {
+      console.warn('Remote play error:', error);
+    }
+  }
+
+  async handleRemotePause(): Promise<void> {
+    try {
+      const queue = await TrackPlayer.getQueue();
+      if (queue.length === 0) {
+        return;
+      }
+
+      await TrackPlayer.pause();
+    } catch (error) {
+      console.warn('Remote pause error:', error);
+    }
+  }
+
+  async handleRemoteSeek(position: number): Promise<void> {
+    const station = this.playerState.currentStation ?? this.lastStoppedStation;
+    if (station?.type !== RadioStationType.PODCAST) {
+      return;
+    }
+
+    try {
+      await TrackPlayer.seekTo(position);
+      const duration = this.playerState.duration;
+      if (duration > 0) {
+        this.updateState({
+          currentTime: position,
+          progress: position / duration,
+        });
+      }
+    } catch (error) {
+      console.warn('Remote seek error:', error);
+    }
+  }
+
+  async handleRemoteStop(): Promise<void> {
+    try {
+      this.rememberStoppedStation();
+      this.clearBufferingTimeout();
+
+      const queue = await TrackPlayer.getQueue();
+      if (queue.length > 0) {
+        await TrackPlayer.pause();
+      }
+
+      this.clearPlayerUiState();
+    } catch (error) {
+      console.warn('Remote stop error:', error);
+    }
+  }
+
   async setVolume(volume: number): Promise<void> {
     const clampedVolume = Math.max(0, Math.min(1, volume));
     this.updateState({ volume: clampedVolume });
 
-    if (this.sound) {
-      try {
-        await this.sound.setVolumeAsync(clampedVolume);
-      } catch (error) {
-        console.error('Set volume error:', error);
-      }
+    try {
+      await this.ensureSetup();
+      await TrackPlayer.setVolume(clampedVolume);
+    } catch (error) {
+      console.error('Set volume error:', error);
     }
   }
 
   async seek(progress: number): Promise<void> {
-    if (!this.sound || this.playerState.duration === 0) return;
+    if (this.playerState.duration === 0) {
+      return;
+    }
 
     const clampedProgress = Math.max(0, Math.min(1, progress));
-    const positionMillis = clampedProgress * this.playerState.duration * 1000;
+    const position = clampedProgress * this.playerState.duration;
 
     try {
-      await this.sound.setPositionAsync(positionMillis);
+      await TrackPlayer.seekTo(position);
     } catch (error) {
       // Seek error
     }

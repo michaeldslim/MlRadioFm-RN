@@ -18,6 +18,7 @@ export const useRadioPlayer = () => {
   const radioService = RadioPlayerService.getInstance();
 
   useEffect(() => {
+    void radioService.initialize();
     const unsubscribe = radioService.subscribe(setPlayerState);
     return unsubscribe;
   }, []);
