@@ -127,10 +127,7 @@ function AppContent() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar
-        barStyle={isLandscapeTablet ? 'light-content' : 'dark-content'}
-        backgroundColor={isLandscapeTablet ? '#0f0c29' : '#f8f9fa'}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
       {isLandscapeTablet ? (
         <View style={styles.landscapeRoot}>
@@ -172,6 +169,8 @@ const styles = StyleSheet.create({
   landscapePanel: {
     width: LANDSCAPE_PANEL_WIDTH,
     maxWidth: `${LANDSCAPE_PANEL_MAX_WIDTH_RATIO * 100}%`,
+    flexShrink: 0,
+    flexDirection: 'column',
     backgroundColor: '#f8f9fa',
     borderRightWidth: StyleSheet.hairlineWidth,
     borderRightColor: 'rgba(142, 142, 147, 0.35)',

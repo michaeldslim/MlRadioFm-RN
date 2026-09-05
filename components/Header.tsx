@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IPlayerState } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDeviceLayout } from '../hooks/useDeviceLayout';
 
 interface IHeaderProps {
   playerState: IPlayerState;
@@ -28,6 +29,7 @@ export const Header: React.FC<IHeaderProps> = ({
   onSearchTextChange,
 }) => {
   const { language, setLanguage, t } = useLanguage();
+  const { isLandscapeTablet } = useDeviceLayout();
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ko' : 'en');
@@ -36,7 +38,7 @@ export const Header: React.FC<IHeaderProps> = ({
   return (
     <LinearGradient
       colors={['#f8f9fa', '#e9ecef']}
-      style={styles.container}
+      style={[styles.container, isLandscapeTablet && styles.containerCompact]}
     >
       <View style={styles.headerContent}>
         <View style={styles.titleSection}>
@@ -101,8 +103,10 @@ export const Header: React.FC<IHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 50, // Account for status bar
+    paddingVertical: 16,
+  },
+  containerCompact: {
+    paddingVertical: 12,
   },
   headerContent: {
     flexDirection: 'row',
