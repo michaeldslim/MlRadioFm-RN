@@ -1,16 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useKeepAwake } from 'expo-keep-awake';
+import { deactivateKeepAwake, ExpoKeepAwakeTag } from 'expo-keep-awake';
 import { Header } from './components/Header';
 import { ControlPanel } from './components/ControlPanel';
 import { CategoryTabs } from './components/CategoryTabs';
 import { StationList } from './components/StationList';
 import { MiniPlayerBar } from './components/MiniPlayerBar';
-import { ScreenDimOverlay } from './components/ScreenDimOverlay';
 import { LandscapeDecorPanel } from './components/LandscapeDecorPanel';
 import { useRadioPlayer } from './hooks/useRadioPlayer';
-import { useScreenDimmer } from './hooks/useScreenDimmer';
 import { useDeviceLayout } from './hooks/useDeviceLayout';
 import { useOrientationLock } from './hooks/useOrientationLock';
 import { radioStations } from './data/stations';
@@ -22,12 +20,20 @@ import {
 } from './utils/deviceUtils';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-function PlayerKeepAwake() {
-  useKeepAwake('radio-player');
-  return null;
-}
-
 function AppContent() {
+  useEffect(() => {
+    // Expo dev builds wrap the app with withDevTools(), which keeps the screen awake on Android.
+    // Parent keep-awake activates asynchronously, so deactivate again after it settles.
+    const deactivateDevKeepAwake = () => {
+      void deactivateKeepAwake(ExpoKeepAwakeTag);
+    };
+
+    deactivateDevKeepAwake();
+    const timeoutId = setTimeout(deactivateDevKeepAwake, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   const [searchText, setSearchText] = useState('');
   const [showingSearch, setShowingSearch] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<StationCategory>(StationCategory.ALL);
@@ -43,7 +49,6 @@ function AppContent() {
     setVolume,
     seek,
   } = useRadioPlayer();
-  const { isDimmed, wake } = useScreenDimmer(playerState);
 
   const filteredStations = useMemo(() => {
     let stations = radioStations;
@@ -82,7 +87,6 @@ function AppContent() {
 
   const radioMain = (
     <>
-      {playerState.isPlaying && <PlayerKeepAwake />}
       <Header
         playerState={playerState}
         searchText={searchText}
@@ -142,8 +146,6 @@ function AppContent() {
           {miniPlayer}
         </>
       )}
-
-      <ScreenDimOverlay visible={isDimmed} onPress={wake} />
     </SafeAreaView>
   );
 }

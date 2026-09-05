@@ -36,7 +36,6 @@ export const ko: TranslationKeys = {
   playing: '재생 중',
   paused: '일시정지',
   stopped: '정지됨',
-  screenDimmedHint: '탭하여 화면 켜기',
 
   // Landscape tablet decor
   landscapeTagline: '한국·해외 라디오를 언제든지',

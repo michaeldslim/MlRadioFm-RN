@@ -3,4 +3,7 @@
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
   <string name="expo_runtime_version">1.5.0</string>
+  <string name="rntp_temporary_channel_id">mlradiofm_playback</string>
+  <string name="rntp_temporary_channel_name">ML Radio FM</string>
+  <string name="playback_channel_name">ML Radio FM</string>
 </resources>
