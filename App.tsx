@@ -8,11 +8,18 @@ import { CategoryTabs } from './components/CategoryTabs';
 import { StationList } from './components/StationList';
 import { MiniPlayerBar } from './components/MiniPlayerBar';
 import { ScreenDimOverlay } from './components/ScreenDimOverlay';
+import { LandscapeDecorPanel } from './components/LandscapeDecorPanel';
 import { useRadioPlayer } from './hooks/useRadioPlayer';
 import { useScreenDimmer } from './hooks/useScreenDimmer';
+import { useDeviceLayout } from './hooks/useDeviceLayout';
+import { useOrientationLock } from './hooks/useOrientationLock';
 import { radioStations } from './data/stations';
 import { StationCategory } from './types';
 import { filterStationsByCategory } from './utils/categoryUtils';
+import {
+  LANDSCAPE_PANEL_WIDTH,
+  LANDSCAPE_PANEL_MAX_WIDTH_RATIO,
+} from './utils/deviceUtils';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 function PlayerKeepAwake() {
@@ -20,10 +27,13 @@ function PlayerKeepAwake() {
   return null;
 }
 
-export default function App() {
+function AppContent() {
   const [searchText, setSearchText] = useState('');
   const [showingSearch, setShowingSearch] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<StationCategory>(StationCategory.ALL);
+
+  useOrientationLock();
+  const { isLandscapeTablet } = useDeviceLayout();
 
   const {
     playerState,
@@ -38,12 +48,10 @@ export default function App() {
   const filteredStations = useMemo(() => {
     let stations = radioStations;
 
-    // Apply category filter
     if (selectedCategory !== StationCategory.ALL) {
       stations = filterStationsByCategory(stations, selectedCategory);
     }
 
-    // Apply search filter
     if (showingSearch && searchText.trim()) {
       stations = stations.filter(station =>
         station.name.toLowerCase().includes(searchText.toLowerCase())
@@ -72,60 +80,79 @@ export default function App() {
     await seek(progress);
   };
 
+  const radioMain = (
+    <>
+      {playerState.isPlaying && <PlayerKeepAwake />}
+      <Header
+        playerState={playerState}
+        searchText={searchText}
+        showingSearch={showingSearch}
+        onSearchToggle={handleSearchToggle}
+        onSearchTextChange={setSearchText}
+      />
+      <ControlPanel
+        playerState={playerState}
+        onPlayPause={togglePlayPause}
+        onStop={stop}
+        onVolumeChange={handleVolumeChange}
+      />
+      <CategoryTabs
+        selectedCategory={selectedCategory}
+        stations={radioStations}
+        onCategorySelect={setSelectedCategory}
+      />
+      <View style={styles.stationListContainer}>
+        <StationList
+          stations={filteredStations}
+          playerState={playerState}
+          onStationSelect={handleStationSelect}
+          onSeek={handleSeek}
+          selectedCategory={selectedCategory}
+        />
+      </View>
+    </>
+  );
+
+  const miniPlayer = playerState.currentStation ? (
+    <MiniPlayerBar
+      playerState={playerState}
+      onPlayPause={togglePlayPause}
+      onStop={stop}
+    />
+  ) : null;
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar
+        barStyle={isLandscapeTablet ? 'light-content' : 'dark-content'}
+        backgroundColor={isLandscapeTablet ? '#0f0c29' : '#f8f9fa'}
+      />
+
+      {isLandscapeTablet ? (
+        <View style={styles.landscapeRoot}>
+          <View style={styles.landscapePanel}>
+            <View style={styles.content}>{radioMain}</View>
+            {miniPlayer}
+          </View>
+          <LandscapeDecorPanel playerState={playerState} />
+        </View>
+      ) : (
+        <>
+          <View style={styles.content}>{radioMain}</View>
+          {miniPlayer}
+        </>
+      )}
+
+      <ScreenDimOverlay visible={isDimmed} onPress={wake} />
+    </SafeAreaView>
+  );
+}
+
+export default function App() {
   return (
     <SafeAreaProvider>
       <LanguageProvider>
-        <SafeAreaView style={styles.container} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-        
-        <View style={styles.content}>
-          {playerState.isPlaying && <PlayerKeepAwake />}
-          {/* Header */}
-          <Header
-            playerState={playerState}
-            searchText={searchText}
-            showingSearch={showingSearch}
-            onSearchToggle={handleSearchToggle}
-            onSearchTextChange={setSearchText}
-          />
-
-          {/* Control Panel */}
-          <ControlPanel
-            playerState={playerState}
-            onPlayPause={togglePlayPause}
-            onStop={stop}
-            onVolumeChange={handleVolumeChange}
-          />
-
-          {/* Category Tabs */}
-          <CategoryTabs
-            selectedCategory={selectedCategory}
-            stations={radioStations}
-            onCategorySelect={setSelectedCategory}
-          />
-
-          {/* Station List */}
-          <View style={styles.stationListContainer}>
-            <StationList
-              stations={filteredStations}
-              playerState={playerState}
-              onStationSelect={handleStationSelect}
-              onSeek={handleSeek}
-              selectedCategory={selectedCategory}
-            />
-          </View>
-        </View>
-
-        {playerState.currentStation && (
-          <MiniPlayerBar
-            playerState={playerState}
-            onPlayPause={togglePlayPause}
-            onStop={stop}
-          />
-        )}
-
-        <ScreenDimOverlay visible={isDimmed} onPress={wake} />
-        </SafeAreaView>
+        <AppContent />
       </LanguageProvider>
     </SafeAreaProvider>
   );
@@ -135,6 +162,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  landscapeRoot: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  landscapePanel: {
+    width: LANDSCAPE_PANEL_WIDTH,
+    maxWidth: `${LANDSCAPE_PANEL_MAX_WIDTH_RATIO * 100}%`,
+    backgroundColor: '#f8f9fa',
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: 'rgba(142, 142, 147, 0.35)',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   content: {
     flex: 1,
