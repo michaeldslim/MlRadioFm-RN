@@ -49,16 +49,15 @@ export const Header: React.FC<IHeaderProps> = ({
             >
               <Ionicons name="radio" size={24} color="white" />
             </LinearGradient>
-            <Text style={styles.title}>{t.appTitle}</Text>
+            <View style={styles.titleTextBlock}>
+              <Text style={styles.title}>{t.appTitle}</Text>
+              {playerState.errorMessage ? (
+                <Text style={[styles.subtitle, styles.errorSubtitle]} numberOfLines={2}>
+                  {playerState.errorMessage}
+                </Text>
+              ) : null}
+            </View>
           </View>
-          
-          {playerState.currentStation ? (
-            <Text style={styles.subtitle} numberOfLines={2}>
-              {playerState.currentStation.name}
-            </Text>
-          ) : (
-            <Text style={styles.subtitle}>{t.selectStation}</Text>
-          )}
         </View>
 
         <View style={styles.headerActions}>
@@ -119,7 +118,10 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  titleTextBlock: {
+    flex: 1,
+    justifyContent: 'center',
   },
   iconGradient: {
     width: 32,
@@ -133,11 +135,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1C1C1E',
+    lineHeight: 30,
   },
   subtitle: {
     fontSize: 14,
+    lineHeight: 20,
     color: '#8E8E93',
-    marginTop: 4,
+    marginTop: 6,
+  },
+  errorSubtitle: {
+    color: '#FF9500',
   },
   headerActions: {
     flexDirection: 'row',
