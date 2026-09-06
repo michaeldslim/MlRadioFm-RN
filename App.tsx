@@ -104,6 +104,11 @@ function AppContent() {
       playerState={playerState}
       onPlayPause={togglePlayPause}
       onStop={stop}
+      onRetry={() => {
+        if (playerState.currentStation) {
+          void playStation(playerState.currentStation);
+        }
+      }}
     />
   ) : null;
 
@@ -114,16 +119,22 @@ function AppContent() {
       {isLandscapeTablet ? (
         <View style={styles.landscapeRoot}>
           <View style={styles.landscapePanel}>
-            <View style={styles.content}>{radioMain}</View>
-            {miniPlayer}
+            <View style={styles.panelBody}>
+              <View style={styles.content}>{radioMain}</View>
+              {miniPlayer ? (
+                <View style={styles.miniPlayerOverlay}>{miniPlayer}</View>
+              ) : null}
+            </View>
           </View>
           <LandscapeDecorPanel playerState={playerState} />
         </View>
       ) : (
-        <>
+        <View style={styles.phoneBody}>
           <View style={styles.content}>{radioMain}</View>
-          {miniPlayer}
-        </>
+          {miniPlayer ? (
+            <View style={styles.miniPlayerOverlay}>{miniPlayer}</View>
+          ) : null}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -161,6 +172,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+  },
+  phoneBody: {
+    flex: 1,
+  },
+  panelBody: {
+    flex: 1,
+  },
+  miniPlayerOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
   },
   content: {
     flex: 1,
