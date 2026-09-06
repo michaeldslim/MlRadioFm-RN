@@ -85,7 +85,6 @@ function AppContent() {
       />
       <CategoryTabs
         selectedCategory={selectedCategory}
-        stations={radioStations}
         onCategorySelect={setSelectedCategory}
       />
       <View style={styles.stationListContainer}>
