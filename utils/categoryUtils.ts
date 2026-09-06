@@ -105,6 +105,95 @@ export const getStationTypeIcon = (type: RadioStationType): string => {
   }
 };
 
+export interface IStationBrand {
+  label: string;
+  color: string;
+}
+
+export const getStationBrand = (station: IRadioStation): IStationBrand => {
+  if (station.url.startsWith('kbs://') || station.name.startsWith('KBS')) {
+    return { label: 'KBS', color: categoryInfo[StationCategory.KBS].color };
+  }
+  if (station.url.startsWith('mbc://') || station.name.startsWith('MBC')) {
+    return { label: 'MBC', color: categoryInfo[StationCategory.MBC].color };
+  }
+  if (station.url.startsWith('sbs://') || station.name.startsWith('SBS')) {
+    return { label: 'SBS', color: categoryInfo[StationCategory.SBS].color };
+  }
+  if (station.url.startsWith('bbs://') || station.name.startsWith('BBS')) {
+    return { label: 'BBS', color: categoryInfo[StationCategory.OTHER].color };
+  }
+  if (station.url.startsWith('ytn://') || station.name.startsWith('YTN')) {
+    return { label: 'YTN', color: '#FF3B30' };
+  }
+  if (station.url.startsWith('arirang://') || station.name.startsWith('Arirang')) {
+    return { label: 'AR', color: categoryInfo[StationCategory.OTHER].color };
+  }
+  if (station.type === RadioStationType.INTERNATIONAL) {
+    return { label: 'FM', color: categoryInfo[StationCategory.INTERNATIONAL].color };
+  }
+  return { label: 'KR', color: categoryInfo[StationCategory.ALL].color };
+};
+
+export const getStationDisplayName = (station: IRadioStation): string => {
+  const name = station.name.replace(/^(KBS|MBC|SBS|YTN|BBS)\s+/, '');
+  return name.replace(/^\d+/, '');
+};
+
+export const getStationSection = (station: IRadioStation): StationCategory => {
+  if (station.type === RadioStationType.INTERNATIONAL) {
+    return StationCategory.INTERNATIONAL;
+  }
+  if (station.url.startsWith('kbs://') || station.name.startsWith('KBS')) {
+    return StationCategory.KBS;
+  }
+  if (station.url.startsWith('mbc://') || station.name.startsWith('MBC')) {
+    return StationCategory.MBC;
+  }
+  if (station.url.startsWith('sbs://') || station.name.startsWith('SBS')) {
+    return StationCategory.SBS;
+  }
+  return StationCategory.OTHER;
+};
+
+const SECTION_ORDER: StationCategory[] = [
+  StationCategory.KBS,
+  StationCategory.MBC,
+  StationCategory.SBS,
+  StationCategory.OTHER,
+  StationCategory.INTERNATIONAL,
+];
+
+export interface IStationSection {
+  category: StationCategory;
+  title: string;
+  color: string;
+  data: IRadioStation[];
+}
+
+export const groupStationsIntoSections = (
+  stations: IRadioStation[],
+  language: Language = 'en',
+): IStationSection[] => {
+  const buckets = new Map<StationCategory, IRadioStation[]>();
+
+  for (const station of stations) {
+    const section = getStationSection(station);
+    const group = buckets.get(section) ?? [];
+    group.push(station);
+    buckets.set(section, group);
+  }
+
+  return SECTION_ORDER
+    .filter(category => (buckets.get(category)?.length ?? 0) > 0)
+    .map(category => ({
+      category,
+      title: getCategoryDisplayName(category, language),
+      color: categoryInfo[category].color,
+      data: buckets.get(category)!,
+    }));
+};
+
 export const getCategoryDisplayName = (category: StationCategory, language: Language = 'en'): string => {
   if (language === 'ko') {
     switch (category) {

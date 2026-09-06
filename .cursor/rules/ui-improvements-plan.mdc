@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Context
 
-Single-screen Expo radio app. Layout: Header → ControlPanel → CategoryTabs → StationList.
+Single-screen Expo radio app. Layout: Header → CategoryTabs → StationList + MiniPlayerBar.
 Playback via `useRadioPlayer()` / `RadioPlayerService`. Hook signal: `playerState.isPlaying`.
 Screen may turn off during playback; audio continues via track-player background service.
 
@@ -18,11 +18,16 @@ Screen may turn off during playback; audio continues via track-player background
 
 **Completed:**
 - `components/MiniPlayerBar.tsx` — pinned to bottom inside `SafeAreaView`, visible when `currentStation` is set
-- Shows station name, episode title (podcasts), status, play/pause, stop
 - Reuses `togglePlayPause` and `stop` from `App.tsx`
 - Bottom safe area via `useSafeAreaInsets()` from `react-native-safe-area-context` (required for Android `edgeToEdgeEnabled`)
+- **Refresh (list-aligned):** brand avatar + `getStationDisplayName()`, top accent line + brand tint background
+- **Status:** LIVE badge + `EqualizerBars` when playing; pulsing dot when loading; grey paused text; error tint + `retry` action
+- **Controls:** brand-colored play/pause; stop replaced with subtle **X close** icon
+- **Spotify-style glass:** mini player **overlays** station list (`App.tsx` absolute positioning) so background content shows through; iOS uses `expo-blur` `BlurView`, Android uses semi-transparent frosted layer (native blur optional after `expo run:android`)
+- Station title format: `{brand} · {display name}`
+- i18n: `live`, `retry`, `close`
 
-**Optional later:** Expandable volume or dim-mode indicator
+**Optional later:** Expandable volume; tap-to-expand now-playing sheet
 
 ## UI Improvement 2: Finish i18n in ControlPanel ✅ DONE
 
@@ -52,7 +57,7 @@ Screen may turn off during playback; audio continues via track-player background
 - `App.tsx` — landscape tablet: radio UI in left panel (~480dp), decor fills remainder
 - `app.json` orientation `"default"` + Android manifest `unspecified` (JS handles lock)
 
-**Layout:** Left panel = Header → ControlPanel → CategoryTabs → StationList + MiniPlayerBar. Right = branded decor with now-playing card.
+**Layout:** Left panel = Header → CategoryTabs → StationList + MiniPlayerBar. Right = branded decor with now-playing card.
 
 ## Feature: Background Playback & Media Controls ✅ DONE
 
@@ -79,6 +84,23 @@ Screen may turn off during playback; audio continues via track-player background
 - Screen-off playback, station switch, phone call / audio focus on Galaxy
 - Optional: notification channel i18n + network reconnect on drop
 
+## UI Improvement 4: Compact Station List with Brand Colors ✅ DONE
+
+**Problem:** Station cards felt tall and meaningless — same green background, redundant "한국/해외 라디오" meta, weak playback feedback.
+
+**Completed:**
+- `components/StationList.tsx` — card layout replaced with compact rows (hairline dividers, ~44px row height)
+- Removed redundant per-row type meta; category tabs already filter by broadcaster
+- `utils/categoryUtils.ts` — `getStationBrand()` (KBS/MBC/SBS/BBS/YTN/AR/FM label + color), `getStationDisplayName()` (strip broadcaster prefix)
+- Left **brand avatar** circle per row using broadcaster colors from `categoryInfo`
+- Current station: left **accent bar** + tinted row background in brand color
+- `components/EqualizerBars.tsx` — compact 4-bar equalizer animation for playing state; pause icon when paused; spinner when loading
+- Removed `selectedCategory` prop from `StationList` (prefix logic no longer needed)
+- **Section headers** on "All" tab — `SectionList` with sticky KBS / MBC / SBS / Other / International groups via `groupStationsIntoSections()`
+
+**Optional later:**
+- Add `frequency` / `genre` fields to `stations.ts` for richer subtitles
+
 ## Implementation Order
 
 1. ~~i18n in ControlPanel~~ ✅ Done
@@ -92,7 +114,10 @@ Screen may turn off during playback; audio continues via track-player background
 9. ~~Media notification & lock-screen controls~~ ✅ Done
 10. ~~Android foreground-service permissions~~ ✅ Done — Galaxy QA pending
 11. ~~`keep-awake` remove~~ ✅ Done
-12. (Optional) Notification i18n + network reconnect
+12. ~~Compact station list (brand colors + equalizer)~~ ✅ Done
+13. ~~Section headers on "All" tab~~ ✅ Done
+14. (Optional) Notification i18n + network reconnect
+15. (Optional) Frequency/genre metadata in station list
 
 ## Out of Scope / Tried & Reverted
 

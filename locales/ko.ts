@@ -31,6 +31,9 @@ export const ko: TranslationKeys = {
   playing: '재생 중',
   paused: '일시정지',
   stopped: '정지됨',
+  live: 'LIVE',
+  retry: '다시 시도',
+  close: '닫기',
 
   // Landscape tablet decor
   landscapeTagline: '한국·해외 라디오를 언제든지',

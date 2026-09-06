@@ -29,6 +29,9 @@ export const en = {
   playing: 'Playing',
   paused: 'Paused',
   stopped: 'Stopped',
+  live: 'LIVE',
+  retry: 'Retry',
+  close: 'Close',
 
   // Landscape tablet decor
   landscapeTagline: 'Korean & international radio, anytime',

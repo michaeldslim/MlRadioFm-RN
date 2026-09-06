@@ -8,19 +8,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StationCategory, IRadioStation } from '../types';
-import { categoryInfo, filterStationsByCategory, getCategoryDisplayName } from '../utils/categoryUtils';
+import { StationCategory } from '../types';
+import { categoryInfo, getCategoryDisplayName } from '../utils/categoryUtils';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ICategoryTabsProps {
   selectedCategory: StationCategory;
-  stations: IRadioStation[];
   onCategorySelect: (category: StationCategory) => void;
 }
 
 export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
   selectedCategory,
-  stations,
   onCategorySelect,
 }) => {
   const { language } = useLanguage();
@@ -29,7 +27,6 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
   const renderTabButton = (category: StationCategory) => {
     const isSelected = selectedCategory === category;
     const categoryData = categoryInfo[category];
-    const stationCount = filterStationsByCategory(stations, category).length;
 
     return (
       <TouchableOpacity
@@ -47,13 +44,6 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
               <Text style={[styles.tabText, styles.selectedTabText]}>
                 {getCategoryDisplayName(category, language)}
               </Text>
-              {stationCount > 0 && (
-                <View style={[styles.countBadge, { backgroundColor: 'white' }]}>
-                  <Text style={[styles.countText, { color: categoryData.color }]}>
-                    {stationCount}
-                  </Text>
-                </View>
-              )}
             </View>
           </LinearGradient>
         ) : (
@@ -63,13 +53,6 @@ export const CategoryTabs: React.FC<ICategoryTabsProps> = ({
               <Text style={[styles.tabText, { color: '#1C1C1E' }]}>
                 {getCategoryDisplayName(category, language)}
               </Text>
-              {stationCount > 0 && (
-                <View style={[styles.countBadge, { backgroundColor: categoryData.color }]}>
-                  <Text style={[styles.countText, { color: 'white' }]}>
-                    {stationCount}
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
         )}
@@ -134,16 +117,5 @@ const styles = StyleSheet.create({
   },
   selectedTabText: {
     color: 'white',
-  },
-  countBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    minWidth: 16,
-    alignItems: 'center',
-  },
-  countText: {
-    fontSize: 9,
-    fontWeight: 'bold',
   },
 });

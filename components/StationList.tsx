@@ -1,18 +1,24 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
+  SectionList,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { IRadioStation, IPlayerState, RadioStationType } from '../types';
-import { getStationTypeText, getStationTypeIcon } from '../utils/categoryUtils';
+import { IRadioStation, IPlayerState, StationCategory } from '../types';
+import {
+  getStationBrand,
+  getStationDisplayName,
+  groupStationsIntoSections,
+  IStationSection,
+} from '../utils/categoryUtils';
 import { useLanguage } from '../contexts/LanguageContext';
-import { StationCategory } from '../types';
 import { Copyright } from './Copyright';
+import { EqualizerBars } from './EqualizerBars';
 
 interface IStationListProps {
   stations: IRadioStation[];
@@ -25,91 +31,95 @@ export const StationList: React.FC<IStationListProps> = ({
   stations,
   playerState,
   onStationSelect,
-  selectedCategory,
+  selectedCategory = StationCategory.ALL,
 }) => {
   const { t, language } = useLanguage();
+  const useSections = selectedCategory === StationCategory.ALL;
 
-  const getKoreanPrefix = (station: IRadioStation) => {
-    if (station.type !== RadioStationType.KOREAN) return '';
-    if (station.url.startsWith('kbs://')) return 'KBS ';
-    if (station.url.startsWith('mbc://')) return 'MBC ';
-    if (station.url.startsWith('sbs://')) return 'SBS ';
-    if (station.url.startsWith('ytn://')) return 'YTN ';
-    if (station.url.startsWith('bbs://')) return 'BBS ';
-    return '';
+  const sections = useMemo(
+    () => (useSections ? groupStationsIntoSections(stations, language) : []),
+    [useSections, stations, language],
+  );
+
+  const renderStatusIndicator = (
+    isCurrentStation: boolean,
+    isPlaying: boolean,
+    isLoading: boolean,
+    brandColor: string,
+  ) => {
+    if (!isCurrentStation) {
+      return null;
+    }
+
+    if (isLoading) {
+      return <ActivityIndicator size="small" color={brandColor} />;
+    }
+
+    if (isPlaying) {
+      return <EqualizerBars isActive color={brandColor} size="compact" />;
+    }
+
+    return <Ionicons name="pause" size={14} color="#8E8E93" />;
   };
 
-  const renderStationItem = ({ item: station }: { item: IRadioStation }) => {
+  const renderStationRow = (
+    station: IRadioStation,
+    isLastInGroup: boolean,
+  ) => {
     const isCurrentStation = playerState.currentStation?.id === station.id;
     const isPlaying = isCurrentStation && playerState.isPlaying;
     const isLoading = isCurrentStation && playerState.isLoading;
-
-    const showPrefix = typeof selectedCategory !== 'undefined' && (selectedCategory === StationCategory.ALL || (selectedCategory === StationCategory.OTHER && (station.url.startsWith('bbs://') || station.url.startsWith('ytn://'))));
-    const prefix = showPrefix ? getKoreanPrefix(station) : '';
+    const brand = getStationBrand(station);
 
     return (
       <TouchableOpacity
         style={[
-          styles.stationItem,
-          isCurrentStation && styles.currentStationItem,
+          styles.stationRow,
+          isCurrentStation && { backgroundColor: `${brand.color}10` },
+          !isLastInGroup && styles.stationRowBorder,
         ]}
         onPress={() => onStationSelect(station)}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
       >
-        <View style={styles.stationContent}>
-          <View style={styles.indicatorContainer}>
-            <View
-              style={[
-                styles.indicator,
-                isCurrentStation && styles.currentIndicator,
-              ]}
-            >
-              {isCurrentStation && isPlaying && (
-                <View style={styles.playingIndicator} />
-              )}
-            </View>
-          </View>
+        {isCurrentStation && (
+          <View style={[styles.accentBar, { backgroundColor: brand.color }]} />
+        )}
 
-          <View style={styles.stationInfo}>
-            <Text style={styles.stationName} numberOfLines={2}>
-              {prefix}{station.name.replace(/^(KBS|MBC|SBS|YTN|BBS)\s+/, '')}
+        <View style={[styles.avatar, { backgroundColor: brand.color }]}>
+          <Text style={styles.avatarLabel}>{brand.label}</Text>
+        </View>
+
+        <View style={styles.stationInfo}>
+          <Text
+            style={[
+              styles.stationName,
+              isCurrentStation && styles.currentStationName,
+            ]}
+            numberOfLines={1}
+          >
+            {getStationDisplayName(station)}
+          </Text>
+
+          {language === 'en' && station.nameEn && (
+            <Text style={styles.stationSubtitle} numberOfLines={1}>
+              {station.nameEn}
             </Text>
+          )}
+        </View>
 
-            {language === 'en' && station.nameEn && station.type === RadioStationType.KOREAN && (
-              <Text style={styles.stationNameEn} numberOfLines={1}>
-                {station.nameEn}
-              </Text>
-            )}
-
-            <View style={styles.stationMeta}>
-              <Ionicons
-                name={getStationTypeIcon(station.type) as any}
-                size={10}
-                color="#8E8E93"
-              />
-              <Text style={styles.stationTypeText}>
-                {getStationTypeText(station.type, language)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.statusContainer}>
-            {isCurrentStation && (
-              <>
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#007AFF" />
-                ) : isPlaying ? (
-                  <Ionicons name="volume-high" size={14} color="#007AFF" />
-                ) : (
-                  <Ionicons name="pause-circle" size={14} color="#8E8E93" />
-                )}
-              </>
-            )}
-          </View>
+        <View style={styles.statusContainer}>
+          {renderStatusIndicator(isCurrentStation, isPlaying, isLoading, brand.color)}
         </View>
       </TouchableOpacity>
     );
   };
+
+  const renderSectionHeader = ({ section }: { section: IStationSection }) => (
+    <View style={styles.sectionHeader}>
+      <View style={[styles.sectionAccent, { backgroundColor: section.color }]} />
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+    </View>
+  );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -121,10 +131,31 @@ export const StationList: React.FC<IStationListProps> = ({
 
   const renderFooter = () => <Copyright />;
 
+  if (useSections) {
+    return (
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        extraData={playerState}
+        renderItem={({ item, index, section }) =>
+          renderStationRow(item, index === section.data.length - 1)
+        }
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={renderEmptyState}
+        ListFooterComponent={renderFooter}
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  }
+
   return (
     <FlatList
       data={stations}
-      renderItem={renderStationItem}
+      renderItem={({ item, index }) =>
+        renderStationRow(item, index === stations.length - 1)
+      }
       keyExtractor={(item) => item.id}
       extraData={playerState}
       contentContainerStyle={styles.listContainer}
@@ -140,69 +171,83 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 100,
   },
-  stationItem: {
-    backgroundColor: 'rgba(205, 220, 196, 0.5)',
-    borderRadius: 12,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  currentStationItem: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.3)',
-  },
-  stationContent: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingTop: 16,
+    paddingBottom: 6,
+    paddingHorizontal: 4,
+    backgroundColor: '#f8f9fa',
   },
-  indicatorContainer: {
-    marginRight: 14,
+  sectionAccent: {
+    width: 3,
+    height: 14,
+    borderRadius: 1.5,
+    marginRight: 8,
   },
-  indicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'rgba(142, 142, 147, 0.2)',
+  sectionTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
-  currentIndicator: {
-    backgroundColor: '#007AFF',
+  stationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    position: 'relative',
   },
-  playingIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'white',
-    alignSelf: 'center',
-    marginTop: 3,
+  stationRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(142, 142, 147, 0.25)',
+  },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 1.5,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   stationInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   stationName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
     color: '#1C1C1E',
-    marginBottom: 4,
   },
-  stationNameEn: {
+  currentStationName: {
+    fontWeight: '600',
+  },
+  stationSubtitle: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#007AFF',
-    marginBottom: 6,
-    fontStyle: 'italic',
-  },
-  stationMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stationTypeText: {
-    fontSize: 12,
-    fontWeight: '500',
     color: '#8E8E93',
-    marginLeft: 6,
+    marginTop: 2,
   },
   statusContainer: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
   },
   emptyState: {
