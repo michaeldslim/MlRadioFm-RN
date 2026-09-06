@@ -8,7 +8,7 @@ import {
 } from './trackPlayerConfig';
 import { liveMediaArtwork } from '../constants/mediaAssets';
 
-const PLAYBACK_VOLUME = 1;
+const PLAYBACK_VOLUME = 0.5;
 
 export class RadioPlayerService {
   private static instance: RadioPlayerService;
